@@ -1,0 +1,109 @@
+# CLAUDE.md
+
+Guidance for Claude Code working with the sidekick-ui shared component library.
+
+## Overview
+
+`@sidekick/ui` is a React 19 component library (design system) built with TypeScript, Radix UI primitives, and Tailwind CSS v4. It is published to GitHub Packages as a scoped npm package and consumed by both sidekick-web and sidekick-harness.
+
+## Quick Reference
+
+```bash
+# Development
+npm run build                    # Vite library build (ESM + types)
+npm run check                    # TypeScript type check
+
+# Testing
+npm test                         # Vitest (watch mode)
+npm run test:run                 # Vitest (single run)
+npm run test:coverage            # Vitest with v8 coverage
+
+# Formatting & Linting
+npm run format:check             # Prettier check
+npm run format                   # Prettier auto-format
+npm run lint                     # ESLint
+npm run lint:fix                 # ESLint with auto-fix
+```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── ui/              # Base UI components (Button, Card, Dialog, etc.)
+│   ├── layouts/         # Layout components
+│   └── business/        # Shared business components
+├── hooks/               # Shared React hooks
+├── lib/
+│   └── utils.ts         # cn() utility (clsx + tailwind-merge)
+├── styles/
+│   └── theme.css        # CSS custom properties (design tokens, dark/light theme)
+├── types/               # Shared TypeScript types
+├── test/
+│   └── setup.ts         # Vitest setup (jest-dom matchers)
+└── index.ts             # Package entry point (barrel export)
+```
+
+## Architecture
+
+**Stack:** React 19, TypeScript, Vite (library mode), Tailwind CSS 4, Radix UI
+
+**Build output:** `dist/` contains ESM bundle (`index.js`), type declarations (`index.d.ts`), and compiled CSS (`styles/index.css`).
+
+**Package exports:**
+
+- `@sidekick/ui` — components, hooks, and utilities
+- `@sidekick/ui/styles` — compiled Tailwind CSS theme
+
+**Consumers:** sidekick-web (Rails + Inertia.js), sidekick-harness (Fastify + Inertia.js)
+
+## Key Conventions
+
+- **No default exports** — components use named exports only
+- **Radix UI wrappers** — interactive components wrap Radix primitives with styled variants
+- **CSS variables** — theming uses CSS custom properties (`var(--color-*)`, `var(--radius-*)`)
+- **`cn()` utility** — all className merging uses `cn()` from `src/lib/utils.ts`
+- **Peer dependencies** — React 19, React-DOM 19 (consumers provide these)
+- **Dependencies** — Radix UI, clsx, tailwind-merge, lucide-react (bundled with the package's consumers, externalized in build)
+
+## Key Constraints
+
+1. **No app-specific code** — components must be generic and reusable across sidekick-web and sidekick-harness
+2. **No Inertia.js dependency** — this package must not depend on `@inertiajs/react` or any routing library
+3. **No side effects besides CSS** — the `sideEffects` field in package.json only allows CSS
+4. **Serialization-free** — components accept plain props, never API response objects directly
+
+## Claude Code Hooks
+
+### Signed Commits Hook
+
+All `git commit` commands are automatically signed with the `-S` flag.
+
+**To skip** (emergency only):
+
+```bash
+SKIP_SIGNED_COMMITS_HOOK=1 git commit -m "message"
+```
+
+### Pre-Push Hook
+
+A Claude Code hook runs before `git push` to catch issues locally:
+
+1. `npm run format:check` — Prettier formatting
+2. `npm run lint` — ESLint
+3. `npm run check` — TypeScript type checking
+4. `npm run test:run` — Vitest tests
+
+**If checks fail**, the push is blocked. Fix the issues and try again.
+
+**To skip** (emergency only):
+
+```bash
+SKIP_PRE_PUSH_HOOK=1 git push
+```
+
+Note: Both hooks are automatically skipped in CI environments.
+
+## Publishing
+
+Published to GitHub Packages (`npm.pkg.github.com`) via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`. A GitHub Release triggers the publish.

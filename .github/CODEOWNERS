@@ -1,0 +1,11 @@
+# Default owners for everything in the repo
+* @jaryl
+
+# Component library
+/src/components/ @jaryl
+
+# Tests
+/src/test/ @jaryl
+
+# Build and CI configuration
+/.github/ @jaryl

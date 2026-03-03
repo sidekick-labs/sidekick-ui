@@ -80,6 +80,14 @@ export default tseslint.config(
     },
   },
 
+  // Storybook files — multiple named exports are the expected pattern
+  {
+    files: ['**/*.stories.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+
   // Prettier must be last to override formatting rules
   eslintConfigPrettier,
 )

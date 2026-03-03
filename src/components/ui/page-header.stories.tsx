@@ -1,0 +1,83 @@
+import type { Meta, StoryObj } from '@storybook/react'
+import { PageHeader } from './page-header'
+import { Button } from './button'
+
+const meta: Meta<typeof PageHeader> = {
+  title: 'UI/PageHeader',
+  component: PageHeader,
+  decorators: [
+    (Story) => (
+      <div className="w-full">
+        <Story />
+      </div>
+    ),
+  ],
+}
+
+export default meta
+type Story = StoryObj<typeof PageHeader>
+
+export const TitleOnly: Story = {
+  args: {
+    title: 'Dashboard',
+  },
+}
+
+export const WithBreadcrumbs: Story = {
+  args: {
+    breadcrumbs: [
+      { label: 'Home', href: '#' },
+      { label: 'Devices', href: '#' },
+      { label: 'Device Details' },
+    ],
+  },
+}
+
+export const WithTitleAndBreadcrumbs: Story = {
+  args: {
+    title: 'Device Details',
+    breadcrumbs: [
+      { label: 'Home', href: '#' },
+      { label: 'Devices', href: '#' },
+      { label: 'Device Details' },
+    ],
+  },
+}
+
+export const WithActions: Story = {
+  args: {
+    title: 'Firmware Packages',
+    actions: (
+      <div className="flex gap-2">
+        <Button variant="ghost">Export</Button>
+        <Button>Upload Package</Button>
+      </div>
+    ),
+  },
+}
+
+export const WithBackButton: Story = {
+  args: {
+    title: 'Edit Device',
+    showBackButton: true,
+    onBackClick: () => {},
+  },
+}
+
+export const FullExample: Story = {
+  args: {
+    breadcrumbs: [
+      { label: 'Factory', href: '#' },
+      { label: 'Batches', href: '#' },
+      { label: 'Batch #42' },
+    ],
+    actions: (
+      <div className="flex gap-2">
+        <Button variant="ghost">Cancel</Button>
+        <Button>Save</Button>
+      </div>
+    ),
+    showBackButton: true,
+    onBackClick: () => {},
+  },
+}

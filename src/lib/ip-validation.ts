@@ -58,7 +58,9 @@ export function isValidIpOrCidr(value: string): boolean {
 }
 
 /**
- * Validates a comma-separated or newline-separated list of IP addresses/CIDRs
+ * Validates a comma-separated or newline-separated list of IP addresses/CIDRs.
+ * Returns isValid: true with empty arrays for empty/whitespace-only input.
+ * Callers should check validEntries.length > 0 if at least one entry is required.
  */
 export function validateIpList(input: string): IpValidationResult {
   if (!input.trim()) {

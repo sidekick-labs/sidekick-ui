@@ -1,4 +1,4 @@
-import { format, formatDistanceToNowStrict } from 'date-fns'
+import { formatDistanceToNowStrict } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
 const DEFAULT_TIMEZONE = 'UTC'
@@ -30,9 +30,9 @@ function formatWithTimezoneFallback(date: Date, timezone: string | undefined, pa
     return formatInTimeZone(date, tz, pattern)
   } catch {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[@sidekick/ui] Invalid timezone "${tz}", falling back to local time`)
+      console.warn(`[@sidekick/ui] Invalid timezone "${tz}", falling back to UTC`)
     }
-    return format(date, pattern)
+    return formatInTimeZone(date, DEFAULT_TIMEZONE, pattern)
   }
 }
 
@@ -83,7 +83,8 @@ export function formatDateTimeWithTimezone(isoString: string | null, timezone?: 
 
 /**
  * Format relative time (e.g., "1 hour ago", "2 days ago")
- * Note: Relative time is typically timezone independent as it measures duration
+ * Uses the default en-US locale from date-fns. Locale-aware formatting
+ * would require a new signature accepting a locale parameter.
  */
 export function formatRelativeTime(isoString: string | null): string {
   const date = parseDate(isoString)

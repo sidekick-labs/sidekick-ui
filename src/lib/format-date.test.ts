@@ -37,8 +37,7 @@ describe('format-date utilities', () => {
     })
 
     it('handles invalid date strings gracefully', () => {
-      const result = formatDate('invalid-date')
-      expect(typeof result).toBe('string')
+      expect(formatDate('invalid-date')).toBe('—')
     })
   })
 

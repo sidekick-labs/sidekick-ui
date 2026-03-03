@@ -30,7 +30,7 @@ function formatWithTimezoneFallback(date: Date, timezone: string | undefined, pa
     return formatInTimeZone(date, tz, pattern)
   } catch {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[@sidekick/ui] Invalid timezone "${tz}", falling back to UTC`)
+      console.warn(`[@sidekick-labs/ui] Invalid timezone "${tz}", falling back to UTC`)
     }
     return formatInTimeZone(date, DEFAULT_TIMEZONE, pattern)
   }

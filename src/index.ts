@@ -1,4 +1,4 @@
-// Theme styles — consumers import via '@sidekick/ui/styles'
+// Theme styles — consumers import via '@sidekick-labs/ui/styles'
 import './styles/theme.css'
 
 // Utilities

@@ -68,7 +68,7 @@ jobs:
             echo "::notice::Dry run — skipping publish"
             npm publish --dry-run --ignore-scripts
           else
-            echo "::notice::Publishing @sidekick/ui"
+            echo "::notice::Publishing @sidekick-labs/ui"
             npm publish --ignore-scripts
           fi
         env:

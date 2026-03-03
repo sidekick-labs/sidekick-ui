@@ -4,7 +4,7 @@ Guidance for Claude Code working with the sidekick-ui shared component library.
 
 ## Overview
 
-`@sidekick/ui` is a React 19 component library (design system) built with TypeScript, Radix UI primitives, and Tailwind CSS v4. It is published to GitHub Packages as a scoped npm package and consumed by both sidekick-web and sidekick-harness.
+`@sidekick-labs/ui` is a React 19 component library (design system) built with TypeScript, Radix UI primitives, and Tailwind CSS v4. It is published to GitHub Packages as a scoped npm package and consumed by both sidekick-web and sidekick-harness.
 
 ## Quick Reference
 
@@ -52,8 +52,8 @@ src/
 
 **Package exports:**
 
-- `@sidekick/ui` — components, hooks, and utilities
-- `@sidekick/ui/styles` — compiled Tailwind CSS theme
+- `@sidekick-labs/ui` — components, hooks, and utilities
+- `@sidekick-labs/ui/styles` — compiled Tailwind CSS theme
 
 **Consumers:** sidekick-web (Rails + Inertia.js), sidekick-harness (Fastify + Inertia.js)
 

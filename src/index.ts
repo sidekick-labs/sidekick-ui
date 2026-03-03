@@ -19,8 +19,20 @@ export type { IpValidationResult } from './lib/ip-validation'
 export { useDebounce } from './hooks/use-debounce'
 export { useIpValidation } from './hooks/use-ip-validation'
 
-// Components
+// UI primitives
 export * from './components/ui'
+
+// Business components
+export { ChatMessage } from './components/business/chat-message'
+export type { ChatMessageProps } from './components/business/chat-message'
+
+export { ModelListItem } from './components/business/model-list-item'
+export type {
+  ModelListItemProps,
+  ModelListItemModel,
+  ModelCapability,
+  ModelPricing,
+} from './components/business/model-list-item'
 
 // Types
 export type { PaginationMetadata } from './types/pagination'

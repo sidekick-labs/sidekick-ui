@@ -4,5 +4,8 @@ import './styles/theme.css'
 // Utilities
 export { cn } from './lib/utils'
 
-// Components will be exported here as they are added
-// export * from './components/ui'
+// Components
+export * from './components/ui'
+
+// Types
+export type { PaginationMetadata } from './types/pagination'

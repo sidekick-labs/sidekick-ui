@@ -1,5 +1,4 @@
 import type { Preview } from '@storybook/react'
-import React from 'react'
 import '../src/styles/theme.css'
 
 const preview: Preview = {
@@ -24,16 +23,13 @@ const preview: Preview = {
   decorators: [
     (Story, context) => {
       const theme = context.globals.theme || 'dark'
-      return React.createElement(
-        'div',
-        {
-          'data-theme': theme === 'light' ? 'light' : undefined,
-          style: {
-            backgroundColor: theme === 'light' ? '#ffffff' : '#000000',
-            padding: '1rem',
-          },
-        },
-        React.createElement(Story),
+      return (
+        <div
+          data-theme={theme === 'light' ? 'light' : undefined}
+          style={{ backgroundColor: 'var(--color-background)', padding: '1rem' }}
+        >
+          <Story />
+        </div>
       )
     },
   ],

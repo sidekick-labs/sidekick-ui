@@ -64,21 +64,24 @@ export const WithBackButton: Story = {
 }
 
 export const FullExample: Story = {
-  render: () => (
+  args: {
+    showBackButton: true,
+    onBackClick: fn(),
+    breadcrumbs: [
+      { label: 'Factory', href: '#' },
+      { label: 'Batches', href: '#' },
+      { label: 'Batch #42' },
+    ],
+  },
+  render: (args) => (
     <PageHeader
-      breadcrumbs={[
-        { label: 'Factory', href: '#' },
-        { label: 'Batches', href: '#' },
-        { label: 'Batch #42' },
-      ]}
+      {...args}
       actions={
         <div className="flex gap-2">
           <Button variant="ghost">Cancel</Button>
           <Button>Save</Button>
         </div>
       }
-      showBackButton
-      onBackClick={fn()}
     />
   ),
 }

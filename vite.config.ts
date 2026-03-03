@@ -34,6 +34,8 @@ export default defineConfig({
         'clsx',
         'tailwind-merge',
         'lucide-react',
+        'date-fns',
+        'date-fns-tz',
       ],
       output: {
         assetFileNames: 'styles/[name][extname]',

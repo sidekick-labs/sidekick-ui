@@ -40,7 +40,10 @@ export interface IpValidationResult {
 }
 
 /**
- * Validates a single IP address or CIDR notation
+ * Validates a single IP address or CIDR notation.
+ * Supports IPv4, IPv4 CIDR, IPv6 (including :: shorthand), and IPv6 CIDR.
+ * Does not support IPv4-mapped IPv6 (e.g., ::ffff:192.168.1.1) or
+ * IPv4-compatible IPv6 (e.g., ::192.168.1.1) forms.
  */
 export function isValidIpOrCidr(value: string): boolean {
   const trimmed = value.trim()

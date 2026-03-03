@@ -8,8 +8,8 @@ export function parseJsonError(value: string): string | null {
     return null
   } catch (e) {
     if (e instanceof SyntaxError) {
-      // Try to extract position from error message
-      // Common formats: "at position 42", "at line 3 column 5"
+      // Try to extract position from V8 error messages (Node/Chrome).
+      // Other engines use different formats; the fallback below handles them.
       const positionMatch = e.message.match(/position (\d+)/)
       if (positionMatch) {
         const position = parseInt(positionMatch[1], 10)

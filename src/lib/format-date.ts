@@ -29,6 +29,9 @@ function formatWithTimezoneFallback(date: Date, timezone: string | undefined, pa
   try {
     return formatInTimeZone(date, tz, pattern)
   } catch {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[@sidekick/ui] Invalid timezone "${tz}", falling back to local time`)
+    }
     return format(date, pattern)
   }
 }
@@ -79,7 +82,7 @@ export function formatDateTimeWithTimezone(isoString: string | null, timezone?: 
 }
 
 /**
- * Format relative time (e.g., "2d ago", "3h ago")
+ * Format relative time (e.g., "1 hour ago", "2 days ago")
  * Note: Relative time is typically timezone independent as it measures duration
  */
 export function formatRelativeTime(isoString: string | null): string {

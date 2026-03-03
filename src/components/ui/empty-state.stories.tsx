@@ -24,8 +24,8 @@ export const WithAction: Story = {
     icon: Package,
     heading: 'No items yet',
     description: 'Get started by creating your first item.',
-    action: <Button>Create Item</Button>,
   },
+  render: (args) => <EmptyState {...args} action={<Button>Create Item</Button>} />,
 }
 
 export const SearchNoResults: Story = {
@@ -41,8 +41,10 @@ export const NoDocuments: Story = {
     icon: FileText,
     heading: 'No documents',
     description: 'Upload a document to get started.',
-    action: <Button variant="outline">Upload Document</Button>,
   },
+  render: (args) => (
+    <EmptyState {...args} action={<Button variant="outline">Upload Document</Button>} />
+  ),
 }
 
 export const NoTeamMembers: Story = {
@@ -50,6 +52,6 @@ export const NoTeamMembers: Story = {
     icon: Users,
     heading: 'No team members',
     description: 'Invite people to collaborate on this project.',
-    action: <Button>Invite Members</Button>,
   },
+  render: (args) => <EmptyState {...args} action={<Button>Invite Members</Button>} />,
 }

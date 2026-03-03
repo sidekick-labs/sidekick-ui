@@ -1,17 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from 'storybook/test'
 import { PageHeader } from './page-header'
 import { Button } from './button'
 
 const meta: Meta<typeof PageHeader> = {
   title: 'UI/PageHeader',
   component: PageHeader,
-  decorators: [
-    (Story) => (
-      <div className="w-full">
-        <Story />
-      </div>
-    ),
-  ],
+  parameters: {
+    layout: 'padded',
+  },
 }
 
 export default meta
@@ -60,7 +57,7 @@ export const WithBackButton: Story = {
   args: {
     title: 'Edit Device',
     showBackButton: true,
-    onBackClick: () => {},
+    onBackClick: fn(),
   },
 }
 
@@ -78,6 +75,6 @@ export const FullExample: Story = {
       </div>
     ),
     showBackButton: true,
-    onBackClick: () => {},
+    onBackClick: fn(),
   },
 }

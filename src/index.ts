@@ -8,7 +8,7 @@ export {
   formatDateTime,
   formatDateTimeWithTimezone,
   formatRelativeTime,
-  getBrowserTimezone,
+  getLocalTimezone,
 } from './lib/format-date'
 export { parseJsonError, formatJson } from './lib/json-utils'
 export { isValidEmail } from './lib/validation'

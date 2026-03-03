@@ -4,7 +4,7 @@ import {
   formatDateTime,
   formatRelativeTime,
   formatDateTimeWithTimezone,
-  getBrowserTimezone,
+  getLocalTimezone,
 } from './format-date'
 
 describe('format-date utilities', () => {
@@ -109,9 +109,9 @@ describe('format-date utilities', () => {
     })
   })
 
-  describe('getBrowserTimezone', () => {
+  describe('getLocalTimezone', () => {
     it('returns a timezone string in a standard environment', () => {
-      const tz = getBrowserTimezone()
+      const tz = getLocalTimezone()
       expect(typeof tz).toBe('string')
       expect(tz!.length).toBeGreaterThan(0)
     })
@@ -119,7 +119,7 @@ describe('format-date utilities', () => {
     it('returns undefined when Intl is not available', () => {
       const originalIntl = globalThis.Intl
       vi.stubGlobal('Intl', undefined)
-      expect(getBrowserTimezone()).toBeUndefined()
+      expect(getLocalTimezone()).toBeUndefined()
       vi.stubGlobal('Intl', originalIntl)
     })
   })

@@ -13,7 +13,7 @@ function parseDate(isoString: string | null): Date | null {
   return isNaN(date.getTime()) ? null : date
 }
 
-export function getBrowserTimezone(): string | undefined {
+export function getLocalTimezone(): string | undefined {
   if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') return undefined
 
   try {

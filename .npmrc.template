@@ -1,0 +1,4 @@
+# Set GITHUB_TOKEN in your environment, or replace the variable with a
+# Personal Access Token (classic) that has the read:packages scope.
+@sidekick:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}

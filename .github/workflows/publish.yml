@@ -18,8 +18,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write
-      attestations: write
 
     steps:
       - name: Checkout code
@@ -64,23 +62,13 @@ jobs:
           fi
           echo "Version $PKG_VERSION is consistent"
 
-      - name: Pack tarball
-        run: |
-          TARBALL=$(npm pack --json | jq -r '.[0].filename')
-          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
-
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: ${{ env.TARBALL }}
-
       - name: Publish package
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry-run }}" = "true" ]; then
             echo "::notice::Dry run — skipping publish"
             npm publish --dry-run --ignore-scripts
           else
-            echo "::notice::Publishing ${{ env.TARBALL }}"
+            echo "::notice::Publishing @sidekick/ui"
             npm publish --ignore-scripts
           fi
         env:

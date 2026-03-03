@@ -23,21 +23,12 @@ export function getBrowserTimezone(): string | undefined {
   }
 }
 
-function formatWithTimezoneFallback(
-  date: Date,
-  timezone: string | undefined,
-  pattern: string,
-  errorContext: string,
-) {
+function formatWithTimezoneFallback(date: Date, timezone: string | undefined, pattern: string) {
   const tz = timezone || DEFAULT_TIMEZONE
 
   try {
     return formatInTimeZone(date, tz, pattern)
-  } catch (error) {
-    console.error(
-      `Error formatting ${errorContext} date=${date.toISOString()} tz=${timezone}`,
-      error,
-    )
+  } catch {
     return format(date, pattern)
   }
 }
@@ -49,14 +40,14 @@ export function formatDate(isoString: string | null, timezone?: string): string 
   const date = parseDate(isoString)
   if (!date) return '—'
 
-  return formatWithTimezoneFallback(date, timezone, DATE_PATTERN, 'date')
+  return formatWithTimezoneFallback(date, timezone, DATE_PATTERN)
 }
 
 /**
  * Get the timezone abbreviation for a date (e.g., "PST", "EST", "UTC")
  */
 function getTimezoneAbbreviation(date: Date, timezone?: string): string {
-  return formatWithTimezoneFallback(date, timezone, TIMEZONE_PATTERN, 'timezone')
+  return formatWithTimezoneFallback(date, timezone, TIMEZONE_PATTERN)
 }
 
 /**
@@ -71,7 +62,7 @@ export function formatDateTime(
   const date = parseDate(isoString)
   if (!date) return '—'
 
-  const baseFormat = formatWithTimezoneFallback(date, timezone, DATETIME_PATTERN, 'datetime')
+  const baseFormat = formatWithTimezoneFallback(date, timezone, DATETIME_PATTERN)
 
   if (!showTimezone) return baseFormat
 

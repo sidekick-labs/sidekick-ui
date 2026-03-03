@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   formatDate,
   formatDateTime,
@@ -79,22 +79,30 @@ describe('format-date utilities', () => {
   })
 
   describe('formatRelativeTime', () => {
+    const NOW = new Date('2024-06-15T12:00:00Z')
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(NOW)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
     it('formats relative time correctly', () => {
-      const date = new Date().toISOString()
-      const result = formatRelativeTime(date)
+      const result = formatRelativeTime(NOW.toISOString())
       expect(result).toBe('0 seconds ago')
     })
 
     it('handles past dates', () => {
-      const date = new Date(Date.now() - 3600000).toISOString()
-      const result = formatRelativeTime(date)
-      expect(result).toBe('1 hour ago')
+      const date = new Date(NOW.getTime() - 3600000).toISOString()
+      expect(formatRelativeTime(date)).toBe('1 hour ago')
     })
 
     it('handles future dates', () => {
-      const date = new Date(Date.now() + 3600000).toISOString()
-      const result = formatRelativeTime(date)
-      expect(result).toBe('in 1 hour')
+      const date = new Date(NOW.getTime() + 3600000).toISOString()
+      expect(formatRelativeTime(date)).toBe('in 1 hour')
     })
 
     it('handles null input', () => {

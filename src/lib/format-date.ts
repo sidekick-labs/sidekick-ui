@@ -43,7 +43,7 @@ function formatWithTimezoneFallback(
 }
 
 /**
- * Format a date string to yyyy.mm.dd format
+ * Format a date string to yyyy.MM.dd format
  */
 export function formatDate(isoString: string | null, timezone?: string): string {
   const date = parseDate(isoString)
@@ -60,7 +60,7 @@ function getTimezoneAbbreviation(date: Date, timezone?: string): string {
 }
 
 /**
- * Format a date string to yyyy.mm.dd hh:mm format
+ * Format a date string to yyyy.MM.dd HH:mm format
  * Optionally includes timezone abbreviation (e.g., "2024.12.30 14:30 PST")
  */
 export function formatDateTime(

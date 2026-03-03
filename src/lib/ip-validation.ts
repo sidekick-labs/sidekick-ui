@@ -14,9 +14,22 @@ const IPV4_CIDR_PATTERN =
 const IPV6_PATTERN =
   /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){1,7}:$|^(?:[0-9a-fA-F]{1,4}:){1}(?::[0-9a-fA-F]{1,4}){1,6}$|^(?:[0-9a-fA-F]{1,4}:){2}(?::[0-9a-fA-F]{1,4}){1,5}$|^(?:[0-9a-fA-F]{1,4}:){3}(?::[0-9a-fA-F]{1,4}){1,4}$|^(?:[0-9a-fA-F]{1,4}:){4}(?::[0-9a-fA-F]{1,4}){1,3}$|^(?:[0-9a-fA-F]{1,4}:){5}(?::[0-9a-fA-F]{1,4}){1,2}$|^(?:[0-9a-fA-F]{1,4}:){6}:[0-9a-fA-F]{1,4}$/
 
-// IPv6 CIDR pattern
-const IPV6_CIDR_PATTERN =
-  /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\/(?:12[0-8]|1[01][0-9]|[1-9]?[0-9])$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\/(?:12[0-8]|1[01][0-9]|[1-9]?[0-9])$/
+// IPv6 CIDR prefix length pattern (0-128)
+const IPV6_PREFIX_PATTERN = /^(?:12[0-8]|1[01][0-9]|[1-9]?[0-9])$/
+
+/**
+ * Validates an IPv6 CIDR by splitting address and prefix, reusing IPV6_PATTERN
+ * for the address portion. This avoids duplicating all compressed IPv6 branches.
+ */
+function isValidIpv6Cidr(value: string): boolean {
+  const slashIndex = value.lastIndexOf('/')
+  if (slashIndex === -1) return false
+
+  const address = value.substring(0, slashIndex)
+  const prefix = value.substring(slashIndex + 1)
+
+  return IPV6_PATTERN.test(address) && IPV6_PREFIX_PATTERN.test(prefix)
+}
 
 export interface IpValidationResult {
   isValid: boolean
@@ -36,7 +49,7 @@ export function isValidIpOrCidr(value: string): boolean {
     IPV4_PATTERN.test(trimmed) ||
     IPV4_CIDR_PATTERN.test(trimmed) ||
     IPV6_PATTERN.test(trimmed) ||
-    IPV6_CIDR_PATTERN.test(trimmed)
+    isValidIpv6Cidr(trimmed)
   )
 }
 

@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   formatDate,
   formatDateTime,
   formatRelativeTime,
   formatDateTimeWithTimezone,
+  getBrowserTimezone,
 } from './format-date'
 
 describe('format-date utilities', () => {
@@ -98,6 +99,21 @@ describe('format-date utilities', () => {
 
     it('handles null input', () => {
       expect(formatRelativeTime(null)).toBe('—')
+    })
+  })
+
+  describe('getBrowserTimezone', () => {
+    it('returns a timezone string in a standard environment', () => {
+      const tz = getBrowserTimezone()
+      expect(typeof tz).toBe('string')
+      expect(tz!.length).toBeGreaterThan(0)
+    })
+
+    it('returns undefined when Intl is not available', () => {
+      const originalIntl = globalThis.Intl
+      vi.stubGlobal('Intl', undefined)
+      expect(getBrowserTimezone()).toBeUndefined()
+      vi.stubGlobal('Intl', originalIntl)
     })
   })
 })

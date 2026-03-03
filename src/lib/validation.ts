@@ -1,2 +1,2 @@
-/** Basic email format check. Server validates fully with truemail gem. */
+/** Basic email format check — full validation is performed server-side. */
 export const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)

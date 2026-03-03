@@ -51,6 +51,22 @@ describe('isValidIpOrCidr', () => {
     })
   })
 
+  describe('IPv6 CIDR notation', () => {
+    it('accepts valid IPv6 CIDR ranges', () => {
+      expect(isValidIpOrCidr('2001:db8::/32')).toBe(true)
+      expect(isValidIpOrCidr('fe80::1/64')).toBe(true)
+      expect(isValidIpOrCidr('::1/128')).toBe(true)
+      expect(isValidIpOrCidr('::/0')).toBe(true)
+      expect(isValidIpOrCidr('2001:0db8:85a3:0000:0000:8a2e:0370:7334/64')).toBe(true)
+    })
+
+    it('rejects invalid IPv6 CIDR ranges', () => {
+      expect(isValidIpOrCidr('fe80::1/129')).toBe(false)
+      expect(isValidIpOrCidr('fe80::1/')).toBe(false)
+      expect(isValidIpOrCidr('gggg::1/64')).toBe(false)
+    })
+  })
+
   describe('edge cases', () => {
     it('rejects empty strings', () => {
       expect(isValidIpOrCidr('')).toBe(false)

@@ -95,3 +95,9 @@ export { Pagination } from './pagination'
 export type { PaginationProps } from './pagination'
 // PaginationMetadata is exported from the package root (src/index.ts), not here,
 // because it lives in src/types/ rather than src/components/ui/.
+
+export { JsonEditor } from './json-editor'
+export type { JsonEditorProps, SchemaHint } from './json-editor'
+
+export { SortableList } from './sortable-list'
+export type { SortableListProps, DragHandle, HasId } from './sortable-list'

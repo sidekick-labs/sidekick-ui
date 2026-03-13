@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: "Ensure clean working state before starting work. Detects uncommitted changes on the current branch and automatically moves to a worktree if needed, so new work is isolated. Use at the start of any session, or when the user says 'worktree', 'isolate', 'fresh start', or 'new worktree'. Also triggered by /start if it detects a dirty state."
+description: "Ensure clean working state before starting work. Detects uncommitted changes on the current branch and automatically moves to a worktree if needed, so new work is isolated. Use at the start of any session, or when the user says 'worktree', 'isolate', 'fresh start', or 'new worktree'."
 ---
 
 # Worktree Skill
@@ -45,10 +45,11 @@ git stash list
 
 ### Phase 2: Decision Tree
 
-```
-Current State Assessment
-========================
+**If `--force` flag is set:** skip the decision tree entirely and go straight to Phase 3 (Fetch Latest) → Phase 4 (Create Worktree). This is useful when the working tree is clean but you still want to work in an isolated worktree.
 
+**Otherwise**, assess the current state:
+
+```
 ┌─────────────────────────────┐
 │ Working tree clean?         │
 └─────────────────────────────┘
@@ -66,7 +67,7 @@ Current State Assessment
    YES     NO                   │
     │       │                   ▼
     ▼       ▼          Create worktree
-  Stay    Stay         (auto or prompt)
+  Stay    Stay         (go to Phase 3)
   here    here
 ```
 
@@ -135,7 +136,7 @@ Previous state preserved:
 Working directory: .worktrees/<name>
 ```
 
-If the working tree was already clean:
+If the working tree was already clean (and `--force` was not used):
 
 ```
 Working tree is clean on: <branch>
@@ -147,16 +148,12 @@ Ready to start. Create a branch with:
 
 ## Integration with /start
 
-The `/start` skill's decision tree (Phase 5: Set Up Git Branch) already handles worktree creation. This `/worktree` skill can be invoked independently or as a precursor to `/start` when the user wants to assess and isolate before picking up an issue.
-
-When `/start` detects a dirty state (Scenarios B or D), it should follow the same conventions documented here:
+The `/start` skill handles git state assessment as part of its workflow. When `/start` detects a dirty working tree, it should follow the same conventions documented here:
 - Worktrees go in `.worktrees/`
 - Always fetch latest before creating
-- Naming follows the `<identifier>` convention
+- Naming follows the `<identifier>` convention (e.g., `.worktrees/swe-123`)
 
-## Integration with /cleanup
-
-The `/cleanup` skill already handles stale worktree detection and removal in `.worktrees/`. This skill creates worktrees; `/cleanup` removes them when done.
+This `/worktree` skill can also be invoked independently when you want to isolate work without picking up a Linear issue.
 
 ## Error Handling
 
@@ -173,4 +170,4 @@ The `/cleanup` skill already handles stale worktree detection and removal in `.w
 1. **Never discard uncommitted changes** - the whole point is to preserve them
 2. **Never force-checkout** over dirty state - always worktree instead
 3. **Always fetch before creating** - worktrees should start from latest
-4. **Never delete worktrees without /cleanup** - this skill only creates
+4. **This skill only creates worktrees** - it does not remove or clean up stale ones

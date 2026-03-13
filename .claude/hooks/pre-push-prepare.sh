@@ -100,24 +100,28 @@ if git fetch origin "$DEFAULT_BRANCH" --quiet 2>/dev/null; then
       exit 2
     fi
   fi
-else
-  echo "⚠️  Could not fetch origin/$DEFAULT_BRANCH (network?), skipping rebase" >&2
-fi
 
-# --- Step 2: Commit Count Check ---
+  # --- Step 2: Commit Count Check ---
+  # Only check when fetch succeeded and we have a valid remote ref to compare against.
 
-COMMIT_COUNT=$(git rev-list --count "origin/$DEFAULT_BRANCH..HEAD" 2>/dev/null || echo "0")
+  COMMIT_COUNT=$(git rev-list --count "origin/$DEFAULT_BRANCH..HEAD" 2>/dev/null || echo "0")
 
-if [[ "$COMMIT_COUNT" -gt 1 ]]; then
-  if [[ "${ALLOW_MULTIPLE_COMMITS:-}" != "1" ]] && [[ ! "$COMMAND" == ALLOW_MULTIPLE_COMMITS=1* ]]; then
-    echo "" >&2
-    echo "📊 Branch '$CURRENT_BRANCH' has $COMMIT_COUNT commits ahead of $DEFAULT_BRANCH:" >&2
-    git log --oneline "origin/$DEFAULT_BRANCH..HEAD" >&2
-    echo "" >&2
-    echo "Consider squashing into a single commit before pushing." >&2
-    echo "To proceed with multiple commits: ALLOW_MULTIPLE_COMMITS=1 git push ..." >&2
-    exit 2
+  if [[ "$COMMIT_COUNT" -gt 1 ]]; then
+    if [[ "${ALLOW_MULTIPLE_COMMITS:-}" != "1" ]] && [[ ! "$COMMAND" == ALLOW_MULTIPLE_COMMITS=1* ]]; then
+      echo "" >&2
+      echo "📊 Branch '$CURRENT_BRANCH' has $COMMIT_COUNT commits ahead of $DEFAULT_BRANCH:" >&2
+      git log --oneline "origin/$DEFAULT_BRANCH..HEAD" >&2
+      echo "" >&2
+      echo "Consider squashing into a single commit before pushing." >&2
+      if [[ "$REBASE_HAPPENED" == "true" ]]; then
+        echo "Note: rebase changed history — after squashing, push with: git push --force-with-lease" >&2
+      fi
+      echo "To proceed with multiple commits: ALLOW_MULTIPLE_COMMITS=1 git push ..." >&2
+      exit 2
+    fi
   fi
+else
+  echo "⚠️  Could not fetch origin/$DEFAULT_BRANCH (network?), skipping rebase and commit count check" >&2
 fi
 
 # --- Step 3: Handle Rebase Side-Effects ---

@@ -55,6 +55,7 @@
       "Bash(SKIP_PRE_PUSH_HOOK=1 git push:*)",
       "Bash(SKIP_PRE_PUSH_PREPARE=1 git push:*)",
       "Bash(ALLOW_MULTIPLE_COMMITS=1 git push:*)",
+      "Bash(ALLOW_MULTIPLE_COMMITS=1 gh pr create:*)",
       "Skill(worktree)",
       "Bash(git worktree:*)"
     ]

@@ -10,7 +10,6 @@ Ensures the working tree is clean before starting new work. If the main branch (
 ## Why `.worktrees/`
 
 Worktrees are created inside the repo at `.worktrees/<name>` (not under `.claude/worktrees/`). This ensures:
-
 - Worktrees are accessible inside devcontainers (mounted at `/workspace/.worktrees/`)
 - Consistent convention across all repos in the workspace
 - The `.worktrees/` directory is gitignored in each repo
@@ -73,12 +72,10 @@ git stash list
 ```
 
 **Clean working tree:**
-
 - If on default branch: fetch latest and stay. Ready for a new branch.
 - If on a feature branch: inform the user which branch they're on. They may want to continue or start fresh.
 
 **Dirty working tree (changes from previous session):**
-
 - Automatically create a worktree for new work.
 - The existing changes stay untouched on the current branch.
 - Inform the user what was detected and where the worktree was created.
@@ -98,16 +95,14 @@ This ensures the worktree starts from the latest codebase.
 **Naming convention:**
 
 If a name is provided (e.g., from a Linear issue identifier):
-
 ```bash
 git worktree add .worktrees/<name> -b <branch-name> origin/$DEFAULT_BRANCH
 ```
 
 If no name is provided, generate one from context:
-
 - If starting a Linear issue: use the issue identifier (e.g., `swe-123`)
 - If the user described the task: use a short slug (e.g., `fix-auth-timeout`)
-- Fallback: use the date (e.g., `2026-03-13`)
+- Fallback: use today's date in `YYYY-MM-DD` format
 
 **Ensure `.worktrees/` is gitignored:**
 
@@ -116,13 +111,6 @@ If no name is provided, generate one from context:
 if ! grep -q '\.worktrees' .gitignore 2>/dev/null; then
   echo '.worktrees/' >> .gitignore
 fi
-```
-
-**Create the worktree:**
-
-```bash
-git fetch origin $DEFAULT_BRANCH
-git worktree add .worktrees/<name> -b <branch-name> origin/$DEFAULT_BRANCH
 ```
 
 ### Phase 5: Report
@@ -154,7 +142,6 @@ Ready to start. Create a branch with:
 ## Integration with /start
 
 The `/start` skill handles git state assessment as part of its workflow. When `/start` detects a dirty working tree, it should follow the same conventions documented here:
-
 - Worktrees go in `.worktrees/`
 - Always fetch latest before creating
 - Naming follows the `<identifier>` convention (e.g., `.worktrees/swe-123`)
@@ -163,13 +150,13 @@ This `/worktree` skill can also be invoked independently when you want to isolat
 
 ## Error Handling
 
-| Error                              | Solution                                                  |
-| ---------------------------------- | --------------------------------------------------------- |
-| `.worktrees/<name>` already exists | Offer to reuse existing or create with suffix             |
-| Branch name already exists         | Check out existing branch in the worktree instead of `-b` |
-| No origin remote                   | Create worktree from local default branch HEAD            |
-| Fetch fails                        | Warn and create from local default branch HEAD            |
-| `.gitignore` is read-only          | Warn the user to add `.worktrees/` manually               |
+| Error | Solution |
+|-------|----------|
+| `.worktrees/<name>` already exists | Offer to reuse existing or create with suffix |
+| Branch name already exists | Check out existing branch in the worktree instead of `-b` |
+| No origin remote | Create worktree from local default branch HEAD |
+| Fetch fails | Warn and create from local default branch HEAD |
+| `.gitignore` is read-only | Warn the user to add `.worktrees/` manually |
 
 ## Safety Rules
 

@@ -52,7 +52,8 @@
       "Bash(npm run test:*)",
       "Bash(npm test:*)",
       "Bash(npm pack:*)",
-      "Bash(SKIP_PRE_PUSH_HOOK=1 git push:*)"
+      "Bash(SKIP_PRE_PUSH_HOOK=1 git push:*)",
+      "Skill(worktree)"
     ]
   },
   "hooks": {

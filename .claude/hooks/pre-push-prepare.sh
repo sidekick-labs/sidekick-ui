@@ -60,7 +60,7 @@ if [[ "${CI:-}" == "true" ]] || [[ -n "${GITHUB_ACTIONS:-}" ]]; then
 fi
 
 # Get current branch (skip if detached HEAD)
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || true)
 if [[ -z "$CURRENT_BRANCH" ]]; then
   exit 0
 fi
@@ -132,14 +132,18 @@ if [[ "$REBASE_HAPPENED" == "true" ]]; then
     if [[ ! "$COMMAND" =~ --force-with-lease ]] && [[ ! "$COMMAND" =~ --force ]]; then
       MODIFIED_COMMAND=$(printf '%s' "$COMMAND" | sed -E 's/(git[[:space:]]+push)/\1 --force-with-lease/')
       echo "🔄 Injecting --force-with-lease (rebase changed history)" >&2
-      jq -n --arg cmd "$MODIFIED_COMMAND" '{
+      if ! jq -n --arg cmd "$MODIFIED_COMMAND" '{
         "hookSpecificOutput": {
           "hookEventName": "PreToolUse",
+          "permissionDecision": "allow",
           "updatedInput": {
             "command": $cmd
           }
         }
-      }'
+      }'; then
+        echo "❌ Failed to generate hook output — blocking push." >&2
+        exit 2
+      fi
       exit 0
     fi
   fi

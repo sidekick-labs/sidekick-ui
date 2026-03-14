@@ -116,7 +116,11 @@ if git fetch origin "$DEFAULT_BRANCH" --quiet 2>/dev/null; then
       if [[ "$REBASE_HAPPENED" == "true" ]]; then
         echo "Note: rebase changed history — after squashing, push with: git push --force-with-lease" >&2
       fi
-      echo "To proceed with multiple commits: ALLOW_MULTIPLE_COMMITS=1 git push ..." >&2
+      if [[ "$IS_GH_PR_CREATE" == "true" ]]; then
+        echo "To proceed with multiple commits: ALLOW_MULTIPLE_COMMITS=1 gh pr create ..." >&2
+      else
+        echo "To proceed with multiple commits: ALLOW_MULTIPLE_COMMITS=1 git push ..." >&2
+      fi
       exit 2
     fi
   fi

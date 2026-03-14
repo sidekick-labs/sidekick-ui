@@ -85,7 +85,30 @@ All `git commit` commands are automatically signed with the `-S` flag.
 SKIP_SIGNED_COMMITS_HOOK=1 git commit -m "message"
 ```
 
-### Pre-Push Hook
+### Pre-Push Prepare Hook
+
+Automatically keeps feature branches up-to-date before push or PR creation:
+
+1. **Auto-rebase** — Fetches the latest default branch and rebases the current branch onto it. If history changes, `--force-with-lease` is automatically injected into `git push` commands.
+2. **Commit count check** — If the branch has more than 1 commit ahead of the default branch, the push is blocked with a suggestion to squash. Claude will ask whether to squash or proceed.
+
+**Triggers on:** `git push` and `gh pr create` commands.
+
+**Skipped when:** on the default branch, in detached HEAD, or in CI environments.
+
+**To skip entirely** (emergency only):
+
+```bash
+SKIP_PRE_PUSH_PREPARE=1 git push
+```
+
+**To allow multiple commits:**
+
+```bash
+ALLOW_MULTIPLE_COMMITS=1 git push
+```
+
+### Pre-Push Lint Hook
 
 A Claude Code hook runs before `git push` to catch issues locally:
 
@@ -102,7 +125,7 @@ A Claude Code hook runs before `git push` to catch issues locally:
 SKIP_PRE_PUSH_HOOK=1 git push
 ```
 
-Note: Both hooks are automatically skipped in CI environments.
+Note: All hooks are automatically skipped in CI environments.
 
 ## Publishing
 

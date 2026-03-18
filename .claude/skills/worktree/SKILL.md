@@ -58,7 +58,7 @@ git status --porcelain
 Always fetch the latest default branch, regardless of whether a worktree will be created:
 
 ```bash
-git fetch origin $DEFAULT_BRANCH
+git fetch origin "$DEFAULT_BRANCH"
 ```
 
 This ensures any new branch or worktree starts from the latest codebase.
@@ -70,7 +70,7 @@ This ensures any new branch or worktree starts from the latest codebase.
 If a name is provided (e.g., from a Linear issue identifier):
 
 ```bash
-git worktree add .worktrees/<name> -b <branch-name> origin/$DEFAULT_BRANCH
+git worktree add .worktrees/<name> -b <branch-name> "origin/$DEFAULT_BRANCH"
 ```
 
 If no name is provided, generate one from context:
@@ -95,7 +95,7 @@ After setup, display:
 ```
 Worktree created at: .worktrees/<name>
 Branch: <branch-name>
-Based on: origin/main (fetched latest)
+Based on: origin/$DEFAULT_BRANCH (fetched latest)
 
 Previous state preserved:
   Branch: <original-branch>
@@ -108,23 +108,23 @@ If `--stay` was used:
 
 ```
 Staying in current checkout: <branch>
-  (fetched latest origin/main)
+  (fetched latest origin/$DEFAULT_BRANCH)
   <summary of uncommitted changes, if any>
 
 To create a new branch:
-  git checkout -b <branch-name> origin/main
+  git checkout -b <branch-name> origin/$DEFAULT_BRANCH
 ```
 
 ## Integration with /start
 
-The `/start` skill always creates a worktree as part of its workflow. Both skills follow the same conventions:
+If this repo has a `/start` skill, it should always create a worktree as part of its workflow. Both skills would follow the same conventions:
 - Worktrees go in `.worktrees/`
 - Always fetch latest before creating
 - Naming follows the `<identifier>` convention (e.g., `.worktrees/swe-123`)
 
 **Opt-out flags differ by context:**
 - `/worktree --stay` — "stay in current checkout" (you invoked the worktree tool, you're opting out of its action; dirty state is allowed)
-- `/start --no-worktree` — "don't create a worktree" (you're starting new work, skipping one aspect; dirty state causes a hard stop)
+- `/start --no-worktree` — if a `/start` skill exists: "don't create a worktree" (dirty state causes a hard stop)
 
 This `/worktree` skill can also be invoked independently when you want to isolate work without picking up a Linear issue.
 

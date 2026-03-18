@@ -101,3 +101,37 @@ export type { JsonEditorProps, SchemaHint } from './json-editor'
 
 export { SortableList } from './sortable-list'
 export type { SortableListProps, DragHandle, HasId } from './sortable-list'
+
+export { StatCard } from './stat-card'
+export type { StatCardProps } from './stat-card'
+
+export { FormField, FormInput, FormSelect, FormTextarea, FormLabel } from './form-field'
+export type {
+  FormFieldProps,
+  FormInputProps,
+  FormSelectProps,
+  FormTextareaProps,
+  FormLabelProps,
+} from './form-field'
+
+export { DataTable, TableHeader, TableBody, TableRow, TableHead, TableCell } from './data-table'
+export type {
+  DataTableProps,
+  TableHeaderProps,
+  TableBodyProps,
+  TableRowProps,
+  TableHeadProps,
+  TableCellProps,
+} from './data-table'
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs'
+
+export { SectionHeader } from './section-header'
+export type { SectionHeaderProps } from './section-header'
+
+export { ProgressBar } from './progress-bar'
+export type { ProgressBarProps } from './progress-bar'
+
+export { StatsGrid } from './stats-grid'
+export type { StatsGridProps } from './stats-grid'

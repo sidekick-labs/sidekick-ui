@@ -118,11 +118,13 @@ To create a new branch:
 ## Integration with /start
 
 If this repo has a `/start` skill, it should always create a worktree as part of its workflow. Both skills would follow the same conventions:
+
 - Worktrees go in `.worktrees/`
 - Always fetch latest before creating
 - Naming follows the `<identifier>` convention (e.g., `.worktrees/swe-123`)
 
 **Opt-out flags differ by context:**
+
 - `/worktree --stay` — "stay in current checkout" (you invoked the worktree tool, you're opting out of its action; dirty state is allowed)
 - `/start --no-worktree` — if a `/start` skill exists: "don't create a worktree" (dirty state causes a hard stop)
 

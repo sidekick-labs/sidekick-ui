@@ -2,6 +2,8 @@ import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { cn } from '@/lib/utils'
 
+export type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>
+
 const Tabs = TabsPrimitive.Root
 
 export type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>

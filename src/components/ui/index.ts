@@ -125,7 +125,7 @@ export type {
 } from './data-table'
 
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
-export type { TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs'
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs'
 
 export { SectionHeader } from './section-header'
 export type { SectionHeaderProps } from './section-header'

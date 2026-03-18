@@ -6,6 +6,13 @@ export interface ProgressBarProps extends React.HTMLAttributes<HTMLDivElement> {
   max?: number
   variant?: 'primary' | 'success' | 'warning' | 'danger'
   size?: 'sm' | 'md' | 'lg'
+  /**
+   * Accessible label for the progress bar. Without this, screen readers will only
+   * announce "progress bar, X%" with no context. Pass via `aria-label` or use
+   * `aria-labelledby` to reference an existing label element.
+   *
+   * @example <ProgressBar value={60} aria-label="Upload progress" />
+   */
 }
 
 const variantStyles = {

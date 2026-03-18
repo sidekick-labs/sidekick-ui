@@ -28,14 +28,24 @@ describe('StatsGrid', () => {
     expect(grid.className).toContain('gap-6')
   })
 
-  it('applies grid-template-columns inline style', () => {
+  it('applies default 220px minColumnWidth in grid-template-columns', () => {
     const { container } = render(
       <StatsGrid>
         <div>Card</div>
       </StatsGrid>,
     )
     const grid = container.firstChild as HTMLElement
-    expect(grid.style.gridTemplateColumns).toContain('auto-fit')
+    expect(grid.style.gridTemplateColumns).toBe('repeat(auto-fit, minmax(220px, 1fr))')
+  })
+
+  it('applies custom minColumnWidth', () => {
+    const { container } = render(
+      <StatsGrid minColumnWidth={300}>
+        <div>Card</div>
+      </StatsGrid>,
+    )
+    const grid = container.firstChild as HTMLElement
+    expect(grid.style.gridTemplateColumns).toBe('repeat(auto-fit, minmax(300px, 1fr))')
   })
 
   it('forwards ref', () => {

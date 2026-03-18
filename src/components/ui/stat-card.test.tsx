@@ -54,6 +54,24 @@ describe('StatCard', () => {
     expect(trendEl.className).toContain('text-[var(--color-text-muted)]')
   })
 
+  it('hides trend arrow from screen readers', () => {
+    const { container } = render(
+      <StatCard label="Revenue" value="$1k" trend={{ value: '+12%', direction: 'up' }} />,
+    )
+    const arrowSpan = container.querySelector('[aria-hidden="true"]')
+    expect(arrowSpan).toBeInTheDocument()
+    expect(arrowSpan!.textContent).toBe('↑')
+  })
+
+  it('provides screen reader text for trend direction', () => {
+    const { container } = render(
+      <StatCard label="Revenue" value="$1k" trend={{ value: '+12%', direction: 'up' }} />,
+    )
+    const srOnly = container.querySelector('.sr-only')
+    expect(srOnly).toBeInTheDocument()
+    expect(srOnly!.textContent).toBe('up')
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<StatCard ref={ref} label="Test" value={0} />)

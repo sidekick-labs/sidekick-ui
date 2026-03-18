@@ -162,6 +162,32 @@ describe('TableHead', () => {
     expect(th.className).toContain('tracking-wide')
   })
 
+  it('defaults to scope="col"', () => {
+    const { container } = render(
+      <table>
+        <thead>
+          <tr>
+            <TableHead>Name</TableHead>
+          </tr>
+        </thead>
+      </table>,
+    )
+    expect(container.querySelector('th')!.getAttribute('scope')).toBe('col')
+  })
+
+  it('allows scope override', () => {
+    const { container } = render(
+      <table>
+        <tbody>
+          <tr>
+            <TableHead scope="row">Row header</TableHead>
+          </tr>
+        </tbody>
+      </table>,
+    )
+    expect(container.querySelector('th')!.getAttribute('scope')).toBe('row')
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLTableCellElement>()
     render(

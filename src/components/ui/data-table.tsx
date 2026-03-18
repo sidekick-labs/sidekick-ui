@@ -53,10 +53,11 @@ TableRow.displayName = 'TableRow'
 export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>
 
 const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, scope = 'col', ...props }, ref) => {
     return (
       <th
         ref={ref}
+        scope={scope}
         className={cn(
           'text-left px-4 py-2.5 bg-[var(--color-background)] border-b border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] uppercase tracking-wide font-medium whitespace-nowrap',
           className,

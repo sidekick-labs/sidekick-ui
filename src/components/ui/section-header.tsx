@@ -1,21 +1,26 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-export interface SectionHeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {
+export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Content rendered on the right side of the header */
   actions?: React.ReactNode
+  /** Additional className for the heading text */
+  headingClassName?: string
 }
 
-const SectionHeader = React.forwardRef<HTMLHeadingElement, SectionHeaderProps>(
-  ({ className, actions, children, ...props }, ref) => {
+const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
+  ({ className, actions, headingClassName, children, ...props }, ref) => {
     return (
-      <div className="flex items-center justify-between mt-8 mb-6">
+      <div
+        ref={ref}
+        className={cn('flex items-center justify-between mt-8 mb-6', className)}
+        {...props}
+      >
         <h3
-          ref={ref}
           className={cn(
             'text-[var(--color-text-muted)] text-xs uppercase tracking-wider font-medium',
-            className,
+            headingClassName,
           )}
-          {...props}
         >
           {children}
         </h3>

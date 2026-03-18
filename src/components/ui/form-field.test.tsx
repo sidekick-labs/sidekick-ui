@@ -28,6 +28,11 @@ describe('FormLabel', () => {
     const { container } = render(<FormLabel className="custom-class">Label</FormLabel>)
     expect(within(container).getByText('Label')).toHaveClass('custom-class')
   })
+
+  it('passes htmlFor to the label element', () => {
+    const { container } = render(<FormLabel htmlFor="email-input">Email</FormLabel>)
+    expect(container.querySelector('label')!.getAttribute('for')).toBe('email-input')
+  })
 })
 
 describe('FormInput', () => {
@@ -43,10 +48,18 @@ describe('FormInput', () => {
     expect(input.className).toContain('px-3')
   })
 
-  it('applies search variant', () => {
+  it('applies search variant with left padding', () => {
     const { container } = render(<FormInput variant="search" />)
     const input = container.querySelector('input')!
     expect(input.className).toContain('pl-8')
+  })
+
+  it('renders icon when provided', () => {
+    const SearchIcon = ({ className }: { className?: string }) => (
+      <svg data-testid="search-icon" className={className} />
+    )
+    const { getByTestId } = render(<FormInput icon={SearchIcon} />)
+    expect(getByTestId('search-icon')).toBeInTheDocument()
   })
 
   it('applies error styling', () => {
@@ -81,10 +94,12 @@ describe('FormSelect', () => {
     expect(within(select).getByText('Option B')).toBeInTheDocument()
   })
 
-  it('renders placeholder option', () => {
+  it('renders placeholder option as disabled and hidden', () => {
     const { container } = render(<FormSelect options={options} placeholder="Choose..." />)
-    const select = container.querySelector('select')!
-    expect(within(select).getByText('Choose...')).toBeInTheDocument()
+    const placeholder = within(container.querySelector('select')!).getByText('Choose...')
+    expect(placeholder).toBeInTheDocument()
+    expect((placeholder as HTMLOptionElement).disabled).toBe(true)
+    expect((placeholder as HTMLOptionElement).hidden).toBe(true)
   })
 
   it('applies error styling', () => {
@@ -155,13 +170,25 @@ describe('FormField', () => {
     expect(within(container).getByText('Email')).toBeInTheDocument()
   })
 
-  it('renders error message when provided', () => {
+  it('associates label with input via inputId', () => {
+    const { container } = render(
+      <FormField label="Email" inputId="email-field">
+        <input id="email-field" />
+      </FormField>,
+    )
+    const label = container.querySelector('label')!
+    expect(label.getAttribute('for')).toBe('email-field')
+  })
+
+  it('renders error message with alert role', () => {
     const { container } = render(
       <FormField error="This field is required">
         <input />
       </FormField>,
     )
-    expect(within(container).getByText('This field is required')).toBeInTheDocument()
+    const error = within(container).getByText('This field is required')
+    expect(error).toBeInTheDocument()
+    expect(error.getAttribute('role')).toBe('alert')
   })
 
   it('forwards ref', () => {

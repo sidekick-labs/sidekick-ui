@@ -48,10 +48,18 @@ describe('FormInput', () => {
     expect(input.className).toContain('px-3')
   })
 
-  it('does not apply icon padding for search variant without icon', () => {
-    const { container } = render(<FormInput variant="search" />)
-    const input = container.querySelector('input')!
-    expect(input.className).not.toContain('pl-8')
+  it('does not wrap in a div without an icon', () => {
+    const { container } = render(<FormInput />)
+    expect(container.firstChild).toBeInstanceOf(HTMLInputElement)
+  })
+
+  it('wraps in a relative div when icon is provided', () => {
+    const SearchIcon = ({ className }: { className?: string }) => (
+      <svg data-testid="icon" className={className} />
+    )
+    const { container } = render(<FormInput icon={SearchIcon} />)
+    expect(container.firstChild).not.toBeInstanceOf(HTMLInputElement)
+    expect((container.firstChild as HTMLElement).className).toContain('relative')
   })
 
   it('applies icon padding when icon is provided', () => {
@@ -75,6 +83,22 @@ describe('FormInput', () => {
     const { container } = render(<FormInput error="Required" />)
     const input = container.querySelector('input')!
     expect(input.className).toContain('border-[var(--color-danger)]')
+  })
+
+  it('sets aria-invalid when error is present', () => {
+    const { container } = render(<FormInput error="Required" />)
+    expect(container.querySelector('input')!.getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('does not set aria-invalid when no error', () => {
+    const { container } = render(<FormInput />)
+    expect(container.querySelector('input')!.hasAttribute('aria-invalid')).toBe(false)
+  })
+
+  it('sets aria-invalid on input with icon when error is present', () => {
+    const Icon = ({ className }: { className?: string }) => <svg className={className} />
+    const { container } = render(<FormInput icon={Icon} error="Required" />)
+    expect(container.querySelector('input')!.getAttribute('aria-invalid')).toBe('true')
   })
 
   it('forwards ref', () => {
@@ -116,6 +140,16 @@ describe('FormSelect', () => {
     expect(select.className).toContain('border-[var(--color-danger)]')
   })
 
+  it('sets aria-invalid when error is present', () => {
+    const { container } = render(<FormSelect options={options} error="Required" />)
+    expect(container.querySelector('select')!.getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('does not set aria-invalid when no error', () => {
+    const { container } = render(<FormSelect options={options} />)
+    expect(container.querySelector('select')!.hasAttribute('aria-invalid')).toBe(false)
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLSelectElement>()
     render(<FormSelect ref={ref} options={options} />)
@@ -145,6 +179,16 @@ describe('FormTextarea', () => {
     const { container } = render(<FormTextarea error="Required" />)
     const textarea = container.querySelector('textarea')!
     expect(textarea.className).toContain('border-[var(--color-danger)]')
+  })
+
+  it('sets aria-invalid when error is present', () => {
+    const { container } = render(<FormTextarea error="Required" />)
+    expect(container.querySelector('textarea')!.getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('does not set aria-invalid when no error', () => {
+    const { container } = render(<FormTextarea />)
+    expect(container.querySelector('textarea')!.hasAttribute('aria-invalid')).toBe(false)
   })
 
   it('forwards ref', () => {
@@ -197,6 +241,26 @@ describe('FormField', () => {
     const error = within(container).getByText('This field is required')
     expect(error).toBeInTheDocument()
     expect(error.getAttribute('role')).toBe('alert')
+  })
+
+  it('generates error element ID from inputId', () => {
+    const { container } = render(
+      <FormField label="Email" inputId="email-field" error="Required">
+        <input id="email-field" aria-describedby="email-field-error" />
+      </FormField>,
+    )
+    const errorEl = within(container).getByRole('alert')
+    expect(errorEl.getAttribute('id')).toBe('email-field-error')
+  })
+
+  it('does not generate error ID without inputId', () => {
+    const { container } = render(
+      <FormField error="Required">
+        <input />
+      </FormField>,
+    )
+    const errorEl = within(container).getByRole('alert')
+    expect(errorEl.hasAttribute('id')).toBe(false)
   })
 
   it('forwards ref', () => {

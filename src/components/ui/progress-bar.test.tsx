@@ -64,6 +64,18 @@ describe('ProgressBar', () => {
     expect(inner2.style.width).toBe('0%')
   })
 
+  it('clamps aria-valuenow when value exceeds max', () => {
+    const { container } = render(<ProgressBar value={150} max={100} />)
+    const bar = container.firstChild as HTMLElement
+    expect(bar.getAttribute('aria-valuenow')).toBe('100')
+  })
+
+  it('clamps aria-valuenow when value is negative', () => {
+    const { container } = render(<ProgressBar value={-10} max={100} />)
+    const bar = container.firstChild as HTMLElement
+    expect(bar.getAttribute('aria-valuenow')).toBe('0')
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<ProgressBar ref={ref} value={50} />)

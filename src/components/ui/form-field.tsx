@@ -21,7 +21,6 @@ FormLabel.displayName = 'FormLabel'
 
 export interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
-  variant?: 'default' | 'search'
   /** Icon component rendered inside the input (left side). Automatically applies left padding. */
   icon?: React.ElementType<{ className?: string }>
 }
@@ -30,21 +29,19 @@ const baseInputStyles =
   'w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] text-sm focus:border-[var(--color-primary)] focus:outline-none transition-colors'
 
 const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
-  ({ className, error, variant = 'default', icon: Icon, ...props }, ref) => {
-    if (variant === 'search' || Icon) {
+  ({ className, error, icon: Icon, ...props }, ref) => {
+    if (Icon) {
       return (
         <div className="relative">
-          {Icon && (
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none">
-              <Icon className="w-4 h-4" />
-            </div>
-          )}
+          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none">
+            <Icon className="w-4 h-4" />
+          </div>
           <input
             ref={ref}
+            aria-invalid={error ? true : undefined}
             className={cn(
               baseInputStyles,
-              'py-1.5',
-              Icon && 'pl-8',
+              'pl-8',
               error && 'border-[var(--color-danger)]',
               className,
             )}
@@ -56,6 +53,7 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
     return (
       <input
         ref={ref}
+        aria-invalid={error ? true : undefined}
         className={cn(baseInputStyles, error && 'border-[var(--color-danger)]', className)}
         {...props}
       />
@@ -75,6 +73,7 @@ const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
     return (
       <select
         ref={ref}
+        aria-invalid={error ? true : undefined}
         className={cn(baseInputStyles, error && 'border-[var(--color-danger)]', className)}
         {...props}
       >
@@ -103,6 +102,7 @@ const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaProps>(
     return (
       <textarea
         ref={ref}
+        aria-invalid={error ? true : undefined}
         className={cn(
           baseInputStyles,
           'min-h-[80px] resize-y',
@@ -119,19 +119,28 @@ FormTextarea.displayName = 'FormTextarea'
 export interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
   label?: string
   error?: string
-  /** Associates the label with the input. Pass the same value as the input's `id` prop. */
+  /**
+   * Associates the label and error message with the input.
+   * Pass the same value as the input's `id` prop. The error message
+   * will use `{inputId}-error` as its ID, and consumers should set
+   * `aria-describedby="{inputId}-error"` on the input for full
+   * screen reader support, or use the auto-wired `aria-describedby`
+   * when using FormInput/FormSelect/FormTextarea as direct children.
+   */
   inputId?: string
   children: React.ReactNode
 }
 
 const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
   ({ className, label, error, inputId, children, ...props }, ref) => {
+    const errorId = inputId && error ? `${inputId}-error` : undefined
+
     return (
       <div ref={ref} className={cn(className)} {...props}>
         {label && <FormLabel htmlFor={inputId}>{label}</FormLabel>}
         {children}
         {error && (
-          <p className="text-xs text-[var(--color-danger)] mt-1" role="alert">
+          <p id={errorId} className="text-xs text-[var(--color-danger)] mt-1" role="alert">
             {error}
           </p>
         )}

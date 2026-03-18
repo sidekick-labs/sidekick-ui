@@ -6,7 +6,7 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   label: string
   value: React.ReactNode
   description?: string
-  icon?: React.ElementType
+  icon?: React.ElementType<{ className?: string }>
   trend?: { value: string; direction: 'up' | 'down' | 'neutral' }
 }
 
@@ -39,7 +39,8 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               {trend && (
                 <div className={cn('text-xs mt-1 font-medium', trendColors[trend.direction])}>
                   <span aria-hidden="true">{trendArrows[trend.direction]}</span>
-                  <span className="sr-only">{trend.direction}</span> {trend.value}
+                  <span className="sr-only">Trend: </span>
+                  {trend.value}
                 </div>
               )}
             </div>

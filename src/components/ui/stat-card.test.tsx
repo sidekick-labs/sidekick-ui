@@ -63,13 +63,22 @@ describe('StatCard', () => {
     expect(arrowSpan!.textContent).toBe('↑')
   })
 
-  it('provides screen reader text for trend direction', () => {
+  it('provides screen reader context for trend', () => {
     const { container } = render(
       <StatCard label="Revenue" value="$1k" trend={{ value: '+12%', direction: 'up' }} />,
     )
     const srOnly = container.querySelector('.sr-only')
     expect(srOnly).toBeInTheDocument()
-    expect(srOnly!.textContent).toBe('up')
+    expect(srOnly!.textContent).toBe('Trend: ')
+  })
+
+  it('renders icon with size constraints', () => {
+    const TestIcon = ({ className }: { className?: string }) => (
+      <svg data-testid="sized-icon" className={className} />
+    )
+    const { getByTestId } = render(<StatCard label="Test" value={0} icon={TestIcon} />)
+    expect(getByTestId('sized-icon').getAttribute('class')).toContain('w-5')
+    expect(getByTestId('sized-icon').getAttribute('class')).toContain('h-5')
   })
 
   it('forwards ref', () => {

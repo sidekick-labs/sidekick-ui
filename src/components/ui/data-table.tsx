@@ -16,7 +16,7 @@ export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ className, ...props }, ref) => {
-    return <thead ref={ref} className={cn(className)} {...props} />
+    return <thead ref={ref} className={className} {...props} />
   },
 )
 TableHeader.displayName = 'TableHeader'
@@ -25,7 +25,7 @@ export type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement>
 
 const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ className, ...props }, ref) => {
-    return <tbody ref={ref} className={cn(className)} {...props} />
+    return <tbody ref={ref} className={className} {...props} />
   },
 )
 TableBody.displayName = 'TableBody'

@@ -13,11 +13,7 @@ export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement>
 const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
   ({ className, actions, headingClassName, as: Heading = 'h3', children, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn('flex items-center justify-between mt-8 mb-6', className)}
-        {...props}
-      >
+      <div ref={ref} className={cn('flex items-center justify-between mb-4', className)} {...props}>
         <Heading
           className={cn(
             'text-[var(--color-text-muted)] text-xs uppercase tracking-wider font-medium',

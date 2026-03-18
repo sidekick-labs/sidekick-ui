@@ -31,13 +31,14 @@ const sizeStyles = {
 
 const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
   ({ className, value, max = 100, variant = 'primary', size = 'md', ...props }, ref) => {
-    const percentage = Math.min(100, Math.max(0, (value / max) * 100))
+    const clampedValue = Math.min(Math.max(0, value), max)
+    const percentage = (clampedValue / max) * 100
 
     return (
       <div
         ref={ref}
         role="progressbar"
-        aria-valuenow={value}
+        aria-valuenow={clampedValue}
         aria-valuemin={0}
         aria-valuemax={max}
         className={cn(

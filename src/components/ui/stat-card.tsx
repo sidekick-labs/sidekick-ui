@@ -39,7 +39,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               {trend && (
                 <div className={cn('text-xs mt-1 font-medium', trendColors[trend.direction])}>
                   <span aria-hidden="true">{trendArrows[trend.direction]}</span>
-                  <span className="sr-only">Trend: </span>
+                  <span className="sr-only">Trend {trend.direction}: </span>
                   {trend.value}
                 </div>
               )}

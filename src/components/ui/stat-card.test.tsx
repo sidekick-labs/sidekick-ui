@@ -69,7 +69,7 @@ describe('StatCard', () => {
     )
     const srOnly = container.querySelector('.sr-only')
     expect(srOnly).toBeInTheDocument()
-    expect(srOnly!.textContent).toBe('Trend: ')
+    expect(srOnly!.textContent).toBe('Trend up: ')
   })
 
   it('renders icon with size constraints', () => {

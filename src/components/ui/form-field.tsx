@@ -121,11 +121,11 @@ export interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
   error?: string
   /**
    * Associates the label and error message with the input.
-   * Pass the same value as the input's `id` prop. The error message
-   * will use `{inputId}-error` as its ID, and consumers should set
-   * `aria-describedby="{inputId}-error"` on the input for full
-   * screen reader support, or use the auto-wired `aria-describedby`
-   * when using FormInput/FormSelect/FormTextarea as direct children.
+   * Pass the same value as the input's `id` prop. The label will get
+   * `htmlFor={inputId}` and the error message will get `id="{inputId}-error"`.
+   *
+   * For full screen reader support, set `aria-describedby="{inputId}-error"`
+   * on the child input element manually.
    */
   inputId?: string
   children: React.ReactNode

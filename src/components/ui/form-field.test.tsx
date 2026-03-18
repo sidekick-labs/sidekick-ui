@@ -48,8 +48,17 @@ describe('FormInput', () => {
     expect(input.className).toContain('px-3')
   })
 
-  it('applies search variant with left padding', () => {
+  it('does not apply icon padding for search variant without icon', () => {
     const { container } = render(<FormInput variant="search" />)
+    const input = container.querySelector('input')!
+    expect(input.className).not.toContain('pl-8')
+  })
+
+  it('applies icon padding when icon is provided', () => {
+    const SearchIcon = ({ className }: { className?: string }) => (
+      <svg data-testid="icon" className={className} />
+    )
+    const { container } = render(<FormInput icon={SearchIcon} />)
     const input = container.querySelector('input')!
     expect(input.className).toContain('pl-8')
   })
@@ -94,12 +103,11 @@ describe('FormSelect', () => {
     expect(within(select).getByText('Option B')).toBeInTheDocument()
   })
 
-  it('renders placeholder option as disabled and hidden', () => {
+  it('renders placeholder option as disabled', () => {
     const { container } = render(<FormSelect options={options} placeholder="Choose..." />)
     const placeholder = within(container.querySelector('select')!).getByText('Choose...')
     expect(placeholder).toBeInTheDocument()
     expect((placeholder as HTMLOptionElement).disabled).toBe(true)
-    expect((placeholder as HTMLOptionElement).hidden).toBe(true)
   })
 
   it('applies error styling', () => {

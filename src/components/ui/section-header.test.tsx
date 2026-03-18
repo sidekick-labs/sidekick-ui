@@ -52,4 +52,21 @@ describe('SectionHeader', () => {
     const { container } = render(<SectionHeader headingClassName="text-lg">Settings</SectionHeader>)
     expect(container.querySelector('h3')).toHaveClass('text-lg')
   })
+
+  it('defaults to h3 heading level', () => {
+    const { container } = render(<SectionHeader>Settings</SectionHeader>)
+    expect(container.querySelector('h3')).toBeInTheDocument()
+    expect(container.querySelector('h2')).not.toBeInTheDocument()
+  })
+
+  it('renders custom heading level via as prop', () => {
+    const { container } = render(<SectionHeader as="h2">Settings</SectionHeader>)
+    expect(container.querySelector('h2')).toHaveTextContent('Settings')
+    expect(container.querySelector('h3')).not.toBeInTheDocument()
+  })
+
+  it('renders h4 heading level', () => {
+    const { container } = render(<SectionHeader as="h4">Sub-section</SectionHeader>)
+    expect(container.querySelector('h4')).toHaveTextContent('Sub-section')
+  })
 })

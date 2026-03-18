@@ -1,18 +1,19 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
+/**
+ * Inline progress indicator with color variants and sizes.
+ *
+ * For accessibility, pass `aria-label` or `aria-labelledby` so screen readers
+ * announce meaningful context (e.g. "Upload progress, 60%") instead of just the percentage.
+ *
+ * @example <ProgressBar value={60} aria-label="Upload progress" />
+ */
 export interface ProgressBarProps extends React.HTMLAttributes<HTMLDivElement> {
   value: number
   max?: number
   variant?: 'primary' | 'success' | 'warning' | 'danger'
   size?: 'sm' | 'md' | 'lg'
-  /**
-   * Accessible label for the progress bar. Without this, screen readers will only
-   * announce "progress bar, X%" with no context. Pass via `aria-label` or use
-   * `aria-labelledby` to reference an existing label element.
-   *
-   * @example <ProgressBar value={60} aria-label="Upload progress" />
-   */
 }
 
 const variantStyles = {

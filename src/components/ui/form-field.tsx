@@ -43,7 +43,8 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             ref={ref}
             className={cn(
               baseInputStyles,
-              'py-1.5 pl-8',
+              'py-1.5',
+              Icon && 'pl-8',
               error && 'border-[var(--color-danger)]',
               className,
             )}
@@ -78,7 +79,7 @@ const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
         {...props}
       >
         {placeholder && (
-          <option value="" disabled hidden>
+          <option value="" disabled>
             {placeholder}
           </option>
         )}

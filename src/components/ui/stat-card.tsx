@@ -45,7 +45,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
             </div>
             {Icon && (
               <div className="text-[var(--color-text-muted)]">
-                <Icon />
+                <Icon className="w-5 h-5" />
               </div>
             )}
           </div>

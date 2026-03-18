@@ -4,7 +4,10 @@ import { cn } from '@/lib/utils'
 
 export type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>
 
-const Tabs = TabsPrimitive.Root
+const Tabs = React.forwardRef<React.ComponentRef<typeof TabsPrimitive.Root>, TabsProps>(
+  (props, ref) => <TabsPrimitive.Root ref={ref} {...props} />,
+)
+Tabs.displayName = 'Tabs'
 
 export type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 

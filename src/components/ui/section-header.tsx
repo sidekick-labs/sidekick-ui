@@ -6,24 +6,26 @@ export interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement>
   actions?: React.ReactNode
   /** Additional className for the heading text */
   headingClassName?: string
+  /** Heading level (default: 'h3'). Set to match your page's heading hierarchy. */
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }
 
 const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
-  ({ className, actions, headingClassName, children, ...props }, ref) => {
+  ({ className, actions, headingClassName, as: Heading = 'h3', children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn('flex items-center justify-between mt-8 mb-6', className)}
         {...props}
       >
-        <h3
+        <Heading
           className={cn(
             'text-[var(--color-text-muted)] text-xs uppercase tracking-wider font-medium',
             headingClassName,
           )}
         >
           {children}
-        </h3>
+        </Heading>
         {actions && <div>{actions}</div>}
       </div>
     )

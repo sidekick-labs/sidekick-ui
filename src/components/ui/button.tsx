@@ -43,7 +43,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted-hover)] border-[var(--color-border)]',
       outline:
         'border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-primary-foreground)]',
-      link: 'bg-transparent border-transparent text-[var(--color-text)] hover:text-[var(--color-primary)]',
+      link: 'bg-transparent border-0 text-[var(--color-text)] hover:text-[var(--color-primary)]',
     }
 
     const sizes = {

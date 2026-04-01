@@ -149,3 +149,6 @@ export type { ProgressBarProps } from './progress-bar'
 
 export { StatsGrid } from './stats-grid'
 export type { StatsGridProps } from './stats-grid'
+
+export { PlatformSwitcher } from './platform-switcher'
+export type { PlatformSwitcherProps, LinkedApp, Organisation } from './platform-switcher'

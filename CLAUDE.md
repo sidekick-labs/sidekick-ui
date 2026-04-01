@@ -16,6 +16,7 @@ Then work inside `.worktrees/<name>/` for the rest of the session.
 **Naming:** Use the Linear issue identifier if available (e.g., `.worktrees/<identifier>`), a task slug (e.g., `.worktrees/fix-auth-timeout`), or today's date (e.g., `.worktrees/2026-04-01`) as fallback.
 
 **The only exceptions** — you may skip worktree creation when:
+
 1. The user explicitly says to skip it (e.g., "no worktree", "just edit here", `--stay`)
 2. The task is read-only (research, investigation, code review with no edits)
 3. You are already inside a worktree (check: `git rev-parse --git-dir` returns a path under `.git/worktrees/`)

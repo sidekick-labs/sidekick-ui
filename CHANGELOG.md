@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `lucide-react` from 0.577.0 to 1.7.0 (#37)
 - Bump dev-dependencies group with 4 updates (#36)
 
-## [0.4.0] - 2026-03-24
+## [0.4.0] - 2026-03-25
 
 ### Added
 
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Button link variant: `border-transparent` replaced with `border-0` for correct inline alignment (#35)
 
-## [0.3.0] - 2026-03-24
+## [0.3.0] - 2026-03-25
 
 ### Changed
 

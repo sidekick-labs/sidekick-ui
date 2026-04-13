@@ -1,7 +1,6 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import react from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
+import eslintReact from '@eslint-react/eslint-plugin'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import eslintConfigPrettier from 'eslint-config-prettier'
 
@@ -15,39 +14,24 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // React configuration
+  // React configuration (eslint-react recommended preset)
+  eslintReact.configs.recommended,
+
+  // Project-specific overrides
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
     plugins: {
-      react,
-      'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
-    languageOptions: {
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-      globals: {
-        React: 'readonly',
-        JSX: 'readonly',
-      },
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
     rules: {
-      // React rules
-      ...react.configs.recommended.rules,
-      ...react.configs['jsx-runtime'].rules,
-      'react/prop-types': 'off',
-      'react/react-in-jsx-scope': 'off',
-
-      // React Hooks rules
-      ...reactHooks.configs.recommended.rules,
+      // Disable eslint-react rules that flag existing patterns not caught by the
+      // previous eslint-plugin-react config. These are valid React 19 migration
+      // targets (forwardRef, createRef) and can be re-enabled in a follow-up.
+      '@eslint-react/no-forward-ref': 'off',
+      '@eslint-react/no-create-ref': 'off',
+      '@eslint-react/component-hook-factories': 'off',
+      '@eslint-react/no-array-index-key': 'off',
+      '@eslint-react/set-state-in-effect': 'off',
 
       // React Refresh rules
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],

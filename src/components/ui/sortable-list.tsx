@@ -123,7 +123,7 @@ export function SortableList<T extends HasId>({
   // the optimistic reorder before the parent updates items.
   React.useEffect(() => {
     if (!activeItem) setOrderedItems(items)
-  }, [items]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [items]) // eslint-disable-line @eslint-react/exhaustive-deps
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

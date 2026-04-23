@@ -39,7 +39,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
             <Breadcrumb>
               <BreadcrumbList>
                 {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={`${crumb.href ?? crumb.label}-${index}`}>
+                  <React.Fragment key={crumb.href ?? crumb.label}>
                     {index > 0 && <BreadcrumbSeparator />}
                     <BreadcrumbItem>
                       {index === breadcrumbs.length - 1 ? (

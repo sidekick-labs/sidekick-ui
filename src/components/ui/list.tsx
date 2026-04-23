@@ -87,10 +87,10 @@ const ListItem = React.forwardRef<HTMLDivElement, ListItemProps>(
       {/* Action Links - Appear on Hover */}
       {actions.length > 0 && (
         <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
-          {actions.map((action, index) => (
+          {actions.map((action) => (
             <button
               type="button"
-              key={`${action.label}-${index}`}
+              key={action.label}
               onClick={action.onClick}
               className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
               aria-label={action.label}

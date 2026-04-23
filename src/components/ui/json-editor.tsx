@@ -161,8 +161,8 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
         {hasErrors && (
           <Callout id={errorId} variant="danger" title="Validation Error">
             <ul className="list-disc list-inside space-y-1">
-              {allErrors.map((error, index) => (
-                <li key={index}>{error}</li>
+              {allErrors.map((error) => (
+                <li key={error}>{error}</li>
               ))}
             </ul>
           </Callout>

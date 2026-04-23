@@ -40,6 +40,47 @@ export interface SchemaHint {
   required?: boolean
 }
 
+type ValidationState = {
+  syntaxError: string | null
+  schemaErrors: string[]
+  isValidating: boolean
+}
+
+type ValidationAction =
+  | { type: 'clear' }
+  | { type: 'syntax-checked'; error: string | null }
+  | { type: 'validation-started' }
+  | { type: 'validation-finished'; errors: string[] }
+  | { type: 'validation-aborted' }
+
+const initialValidationState: ValidationState = {
+  syntaxError: null,
+  schemaErrors: [],
+  isValidating: false,
+}
+
+function validationReducer(state: ValidationState, action: ValidationAction): ValidationState {
+  switch (action.type) {
+    case 'clear':
+      return initialValidationState
+    case 'syntax-checked':
+      // When syntax fails we drop any stale schema errors; when it succeeds
+      // we keep existing schema errors until the debounced validator reports.
+      return {
+        ...state,
+        syntaxError: action.error,
+        schemaErrors: action.error ? [] : state.schemaErrors,
+      }
+    case 'validation-started':
+      return { ...state, isValidating: true }
+    case 'validation-finished':
+      return { ...state, schemaErrors: action.errors, isValidating: false }
+    case 'validation-aborted':
+      // Parser/validator threw — keep prior schema errors, just stop spinning.
+      return { ...state, isValidating: false }
+  }
+}
+
 /**
  * A JSON editor component with formatting, validation feedback, and optional schema hints.
  *
@@ -65,42 +106,38 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
   ) => {
     const inputId = React.useId()
     const errorId = `${inputId}-errors`
-    const [syntaxError, setSyntaxError] = React.useState<string | null>(null)
-    const [schemaErrors, setSchemaErrors] = React.useState<string[]>([])
-    const [isValidating, setIsValidating] = React.useState(false)
+    const [{ syntaxError, schemaErrors, isValidating }, dispatch] = React.useReducer(
+      validationReducer,
+      initialValidationState,
+    )
 
     // Check for syntax errors and validate on debounced changes
     React.useEffect(() => {
       if (!value || value.trim() === '') {
-        setSyntaxError(null)
-        setSchemaErrors([])
+        dispatch({ type: 'clear' })
         return
       }
 
       // First check syntax
       const syntaxErr = parseJsonError(value)
-      setSyntaxError(syntaxErr)
+      dispatch({ type: 'syntax-checked', error: syntaxErr })
 
       // If syntax is invalid or no validator provided, skip validation
-      if (syntaxErr || !onValidate) {
-        setSchemaErrors([])
-        return
-      }
+      if (syntaxErr || !onValidate) return
 
       // Debounced validation
       let cancelled = false
       const timeout = setTimeout(async () => {
-        setIsValidating(true)
+        dispatch({ type: 'validation-started' })
         try {
           const parsedData = JSON.parse(value)
           const validationErrors = await onValidate(parsedData)
-          if (!cancelled) setSchemaErrors(validationErrors)
+          if (!cancelled) dispatch({ type: 'validation-finished', errors: validationErrors })
         } catch {
           // Silently swallow — consumers handle their own error logging
           // inside onValidate. We only catch here to prevent unhandled
           // rejection from crashing the debounce timer.
-        } finally {
-          if (!cancelled) setIsValidating(false)
+          if (!cancelled) dispatch({ type: 'validation-aborted' })
         }
       }, 500)
 

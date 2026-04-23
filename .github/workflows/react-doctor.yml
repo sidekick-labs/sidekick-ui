@@ -3,6 +3,16 @@ name: React Doctor
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'eslint.config.*'
+      - 'react-doctor.config.json'
+      - '.github/workflows/react-doctor.yml'
 
 permissions:
   contents: read

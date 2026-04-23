@@ -119,13 +119,14 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
 
     const canFormat = !syntaxError && value.trim() !== ''
 
-    // Combine all error sources: syntax errors, schema errors, and form submission errors
+    // Combine all error sources: syntax errors, schema errors, and form submission errors.
+    // Dedup so identical messages from different sources don't collide when used as <li> keys.
     const allErrors = React.useMemo(() => {
       const result: string[] = []
       if (syntaxError) result.push(syntaxError)
       if (schemaErrors.length > 0) result.push(...schemaErrors)
       if (errors) result.push(...errors)
-      return result
+      return [...new Set(result)]
     }, [syntaxError, schemaErrors, errors])
 
     const hasErrors = allErrors.length > 0

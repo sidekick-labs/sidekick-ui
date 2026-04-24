@@ -113,10 +113,9 @@ export function SortableList<T extends HasId>({
   renderOverlay,
   className,
 }: SortableListProps<T>) {
-  // Local aliases so the inline invocations inside JSX below don't read as
-  // `renderFoo()` pattern to lint rules — these are render-prop callbacks
-  // (stable closures through the component's lifetime), not inline render
-  // functions re-created each render.
+  // Alias renderItem/renderOverlay so react-doctor's /^render[A-Z]/ heuristic
+  // doesn't flag the JSX invocations below as inline components — they're
+  // render-prop callbacks being invoked, not component definitions.
   const row = renderItem
   const overlay = renderOverlay
   const [orderedItems, setOrderedItems] = React.useState<T[]>(() => items)

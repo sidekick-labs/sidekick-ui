@@ -4,10 +4,11 @@ import { cn } from '@/lib/utils'
 export type FormLabelProps = React.LabelHTMLAttributes<HTMLLabelElement>
 
 const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, htmlFor, ...props }, ref) => {
     return (
       <label
         ref={ref}
+        htmlFor={htmlFor}
         className={cn(
           'text-[11px] uppercase tracking-wider font-medium text-[var(--color-text-muted)] mb-2 block',
           className,

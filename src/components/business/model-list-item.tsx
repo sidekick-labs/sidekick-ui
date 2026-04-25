@@ -112,23 +112,14 @@ const ModelListItem = React.forwardRef<HTMLDivElement, ModelListItemProps>(
                   return (
                     <Tooltip key={cap}>
                       <TooltipTrigger asChild>
-                        {onSelect ? (
-                          <span
-                            className="flex items-center justify-center text-[var(--color-info)]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Icon className="h-4 w-4" aria-hidden="true" />
-                            <span className="sr-only">{label}</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="flex items-center justify-center text-[var(--color-info)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)] rounded-sm"
-                          >
-                            <Icon className="h-4 w-4" aria-hidden="true" />
-                            <span className="sr-only">{label}</span>
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="flex items-center justify-center text-[var(--color-info)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)] rounded-sm"
+                          onClick={onSelect ? (e) => e.stopPropagation() : undefined}
+                        >
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                          <span className="sr-only">{label}</span>
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>{label}</TooltipContent>
                     </Tooltip>

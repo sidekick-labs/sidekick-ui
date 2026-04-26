@@ -152,3 +152,6 @@ export type { StatsGridProps } from './stats-grid'
 
 export { PlatformSwitcher } from './platform-switcher'
 export type { PlatformSwitcherProps, LinkedApp, Organisation } from './platform-switcher'
+
+export { Time, TimezoneProvider, useTimezone } from './time'
+export type { TimeProps, TimezoneProviderProps } from './time'

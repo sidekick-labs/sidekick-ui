@@ -27,16 +27,19 @@ async function gotoStory(page: import('@playwright/test').Page, storyId: string)
 }
 
 test.describe('Visual regression — Storybook', () => {
+  // --- Interactive: Button (variants matrix) ---
   test('Button — AllVariants', async ({ page }) => {
     await gotoStory(page, 'ui-button--all-variants')
     await expect(page).toHaveScreenshot('button-all-variants.png')
   })
 
+  // --- Feedback: Status (statuses matrix) ---
   test('Status — AllStatuses', async ({ page }) => {
     await gotoStory(page, 'ui-status--all-statuses')
     await expect(page).toHaveScreenshot('status-all-statuses.png')
   })
 
+  // --- Interactive: Dialog (open state via portal) ---
   test('Dialog — Default (open state)', async ({ page }) => {
     await gotoStory(page, 'ui-dialog--default')
     // The Default story renders a trigger button; click it to open the dialog.
@@ -44,5 +47,73 @@ test.describe('Visual regression — Storybook', () => {
     // Wait for Radix dialog to mount in the portal.
     await page.getByRole('dialog').waitFor()
     await expect(page).toHaveScreenshot('dialog-default-open.png')
+  })
+
+  // --- Feedback: Badge (variants matrix) ---
+  test('Badge — AllVariants', async ({ page }) => {
+    await gotoStory(page, 'ui-badge--all-variants')
+    await expect(page).toHaveScreenshot('badge-all-variants.png')
+  })
+
+  // --- Feedback: Callout (variants matrix) ---
+  test('Callout — AllVariants', async ({ page }) => {
+    await gotoStory(page, 'ui-callout--all-variants')
+    await expect(page).toHaveScreenshot('callout-all-variants.png')
+  })
+
+  // --- Feedback: EmptyState (data-driven empty layout) ---
+  test('EmptyState — WithAction', async ({ page }) => {
+    await gotoStory(page, 'ui-emptystate--with-action')
+    await expect(page).toHaveScreenshot('empty-state-with-action.png')
+  })
+
+  // --- Layout: Card (composed layout with footer) ---
+  test('Card — WithFooter', async ({ page }) => {
+    await gotoStory(page, 'ui-card--with-footer')
+    await expect(page).toHaveScreenshot('card-with-footer.png')
+  })
+
+  // --- Data: DataTable (default, populated rows) ---
+  test('DataTable — Default', async ({ page }) => {
+    await gotoStory(page, 'ui-datatable--default')
+    await expect(page).toHaveScreenshot('data-table-default.png')
+  })
+
+  // --- Data: DataTable (empty state) ---
+  test('DataTable — Empty', async ({ page }) => {
+    await gotoStory(page, 'ui-datatable--empty')
+    await expect(page).toHaveScreenshot('data-table-empty.png')
+  })
+
+  // --- Data: Pagination (full variant, mid-list state) ---
+  test('Pagination — Default', async ({ page }) => {
+    await gotoStory(page, 'ui-pagination--default')
+    await expect(page).toHaveScreenshot('pagination-default.png')
+  })
+
+  // --- Interactive: Tabs (default selection) ---
+  test('Tabs — Default', async ({ page }) => {
+    await gotoStory(page, 'ui-tabs--default')
+    await expect(page).toHaveScreenshot('tabs-default.png')
+  })
+
+  // --- Interactive: DropdownMenu (open state via portal) ---
+  test('DropdownMenu — Default (open state)', async ({ page }) => {
+    await gotoStory(page, 'ui-dropdownmenu--default')
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('menu').waitFor()
+    await expect(page).toHaveScreenshot('dropdown-menu-default-open.png')
+  })
+
+  // --- Feedback: ProgressBar (variants matrix) ---
+  test('ProgressBar — AllVariants', async ({ page }) => {
+    await gotoStory(page, 'ui-progressbar--all-variants')
+    await expect(page).toHaveScreenshot('progress-bar-all-variants.png')
+  })
+
+  // --- Layout: StatsGrid (composed dashboard widget) ---
+  test('StatsGrid — Default', async ({ page }) => {
+    await gotoStory(page, 'ui-statsgrid--default')
+    await expect(page).toHaveScreenshot('stats-grid-default.png')
   })
 })

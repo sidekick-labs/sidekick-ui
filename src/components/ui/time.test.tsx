@@ -1,6 +1,7 @@
+import * as React from 'react'
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { render, cleanup, within } from '@testing-library/react'
-import { Time, TimezoneProvider } from './time'
+import { render, renderHook, cleanup, within } from '@testing-library/react'
+import { Time, TimezoneProvider, useTimezone } from './time'
 
 afterEach(cleanup)
 
@@ -73,5 +74,49 @@ describe('Time', () => {
     expect(time?.getAttribute('title')).toBe('UTC')
     expect(time?.className).toBe('text-sm')
     expect(time?.textContent).toBe('2024.01.01 12:00 UTC')
+  })
+
+  it('renders datetime format without a provider (browser-tz fallback)', () => {
+    const { container } = render(<Time date={testDate} format="datetime" />)
+    const time = container.querySelector('time')
+    expect(time?.tagName).toBe('TIME')
+    expect(time?.textContent).toMatch(/^\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}$/)
+  })
+
+  it('renders em-dash for unparseable date strings', () => {
+    const { container } = render(<Time date="not-a-date" className="muted" />)
+    expect(container.querySelector('time')).toBeNull()
+    const span = container.querySelector('span')
+    expect(span?.textContent).toBe('—')
+    expect(span?.className).toBe('muted')
+  })
+
+  it('inner TimezoneProvider with undefined value does not shadow outer provider', () => {
+    const { container } = render(
+      <TimezoneProvider value="America/New_York">
+        <TimezoneProvider value={undefined}>
+          <Time date={testDate} format="datetime" />
+        </TimezoneProvider>
+      </TimezoneProvider>,
+    )
+    const time = container.querySelector('time')
+    expect(time?.textContent).toBe('2024.01.01 07:00')
+    expect(time?.getAttribute('title')).toBe('America/New_York')
+  })
+})
+
+describe('useTimezone', () => {
+  it('returns context timezone when wrapped in TimezoneProvider', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TimezoneProvider value="America/New_York">{children}</TimezoneProvider>
+    )
+    const { result } = renderHook(() => useTimezone(), { wrapper })
+    expect(result.current).toBe('America/New_York')
+  })
+
+  it('falls back to a non-empty timezone when no provider is present', () => {
+    const { result } = renderHook(() => useTimezone())
+    expect(typeof result.current).toBe('string')
+    expect(result.current.length).toBeGreaterThan(0)
   })
 })

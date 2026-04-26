@@ -19,6 +19,8 @@ export interface TimezoneProviderProps {
 
 /** Provides a tree-wide timezone for `<Time>` and `useTimezone()`. */
 export function TimezoneProvider({ value, children }: TimezoneProviderProps) {
+  // Skip the provider when value is undefined so a parent provider isn't shadowed.
+  if (!value) return <>{children}</>
   return <TimezoneContext value={value}>{children}</TimezoneContext>
 }
 
@@ -32,13 +34,14 @@ export interface TimeProps {
   date: string | null
   format?: 'date' | 'datetime' | 'datetime-tz' | 'relative'
   className?: string
+  /** Ignored when `format="relative"` (relative time is timezone-independent). */
   timezone?: string
 }
 
-/** Renders a `<time>` element with localized formatting; falls back to `—` when date is null. */
+/** Renders a `<time>` element with localized formatting; falls back to `—` when date is null or unparseable. */
 export function Time({ date, format = 'date', className, timezone }: TimeProps) {
-  const ctxTimezone = React.use(TimezoneContext)
-  const resolvedTimezone = timezone || ctxTimezone || getLocalTimezone() || DEFAULT_TIMEZONE
+  const fallbackTimezone = useTimezone()
+  const resolvedTimezone = timezone || fallbackTimezone
 
   if (!date) return <span className={className}>—</span>
 
@@ -56,6 +59,9 @@ export function Time({ date, format = 'date', className, timezone }: TimeProps) 
     default:
       displayText = formatDate(date, resolvedTimezone)
   }
+
+  // formatters return '—' for unparseable input — avoid emitting <time> with an invalid dateTime attr.
+  if (displayText === '—') return <span className={className}>—</span>
 
   return (
     <time dateTime={date} className={className} title={resolvedTimezone}>

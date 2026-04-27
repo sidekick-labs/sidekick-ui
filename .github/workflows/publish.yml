@@ -50,6 +50,15 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Verify d.ts rollup is non-empty
+        run: |
+          DTS_LINES=$(wc -l < dist/index.d.ts)
+          if [ "$DTS_LINES" -lt 50 ]; then
+            echo "::error::dist/index.d.ts has only $DTS_LINES line(s) — likely a broken type rollup. vite-plugin-dts uses @microsoft/api-extractor, which silently emits 'export {}' when its bundled compiler is older than the project's TypeScript. See PR #71 for context."
+            exit 1
+          fi
+          echo "::notice::dist/index.d.ts has $DTS_LINES lines"
+
       - name: Verify package contents
         run: npm pack --dry-run
 

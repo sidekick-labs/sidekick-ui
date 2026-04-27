@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-27
+
+### Added
+
+- `Time` component, `TimezoneProvider`, and `useTimezone()` hook for consistent date/time rendering (#66)
+  - Resolution order: explicit `timezone` prop → `TimezoneProvider` context → browser tz → `"UTC"`
+  - Supports `date`, `datetime`, `datetime-tz`, and `relative` format variants
+  - Framework-agnostic — no `@inertiajs/react` coupling; consumers wire up their own timezone source
+- Storybook stories for `Doctor`, `JsonEditor`, `LayoutShell`, `ModelListItem`, `Sidebar`, `Time`, and business components, completing coverage of the public API (#69)
+- Playwright visual regression suite covering all Storybook stories (#67, #69)
+- Vitest coverage thresholds enforced in CI (#67)
+- `PlatformSwitcher` test suite (#67)
+
+### Changed
+
+- `JsonEditor` validation state consolidated into a single reducer for predictable transitions (#63)
+- `Doctor` panel: inline render props extracted; prop state lazy-initialised (#64)
+
+### Fixed
+
+- `ModelListItem` icon is now consistently rendered as a `<button>` for keyboard / screen-reader access (#65) (a11y)
+- `JsonEditor` deduplicates Ajv `allErrors` so concurrent errors on the same path no longer collide on React keys (#62)
+- List components no longer mix array-index tiebreakers into keys, preventing remount bugs on reorder (#61)
+- TypeScript 7.0 compatibility: added CSS module type declaration (#51) and removed deprecated `baseUrl` (#50)
+- ESLint 10 compatibility: replaced `eslint-plugin-react` with `@eslint-react` (#48)
+
+### Security
+
+- Hardened all GitHub Actions workflows with pinned versions and minimal permissions (#56)
+- Added CodeQL Actions-workflow scanning (#57)
+
 ## [0.5.0] - 2026-04-01
 
 ### Added

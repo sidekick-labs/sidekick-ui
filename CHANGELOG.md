@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-27
+
+### Fixed
+
+- `dist/index.d.ts` shipped as an empty `export {}` stub in v0.6.0, breaking every TypeScript consumer. Root cause: TypeScript was bumped to 6.0.3 in #49, but `vite-plugin-dts` rolls types up via `@microsoft/api-extractor`, whose bundled compiler is TS 5.8.x. API Extractor logged a "newer than the bundled compiler engine" warning and emitted an empty stub instead of failing the build. Pinned `typescript` back to `^5.9.3` until API Extractor catches up.
+
 ## [0.6.0] - 2026-04-27
 
 ### Added

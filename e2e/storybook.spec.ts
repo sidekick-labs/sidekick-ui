@@ -18,10 +18,29 @@ async function gotoStory(page: import('@playwright/test').Page, storyId: string)
   await page.goto(`/iframe.html?id=${storyId}&viewMode=story`)
   // Wait for Storybook to render the story root with at least one child.
   await page.waitForSelector(STORY_LOAD_SELECTOR, { state: 'attached' })
-  // Fail fast if Storybook rendered its "Story not found" UI — otherwise we'd
-  // silently capture a screenshot of the error page as the baseline.
-  const notFound = await page.$('#error-message, .sb-nopreview, [data-test-id="sb-loaderError"]')
-  if (notFound) {
+  // Storybook signals render mode via a body class: `sb-show-main` for
+  // successfully rendered stories, `sb-show-errordisplay` for runtime errors,
+  // and `sb-show-nopreview` for missing/unmatched story ids. Fail fast on the
+  // error/no-preview paths so we never silently snapshot the error UI.
+  // (NB: `#error-message` always exists in `iframe.html` as a hidden element,
+  // so checking for it directly produces false positives.)
+  await page.waitForFunction(
+    () => {
+      const cls = document.body.classList
+      return (
+        cls.contains('sb-show-main') ||
+        cls.contains('sb-show-errordisplay') ||
+        cls.contains('sb-show-nopreview')
+      )
+    },
+    null,
+    { timeout: 30_000 },
+  )
+  const errored = await page.evaluate(() => {
+    const cls = document.body.classList
+    return cls.contains('sb-show-errordisplay') || cls.contains('sb-show-nopreview')
+  })
+  if (errored) {
     throw new Error(`Storybook reported no matching story for id: ${storyId}`)
   }
 }

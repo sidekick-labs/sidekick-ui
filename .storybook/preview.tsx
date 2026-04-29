@@ -1,5 +1,8 @@
 import type { Preview } from '@storybook/react'
-import '../src/styles/theme.css'
+// Load the full stylesheet (Tailwind + theme tokens + base layer + animations).
+// Importing only theme.css gives CSS variables but no utility classes, so
+// stories render without Tailwind styling.
+import '../src/styles/index.css'
 
 const preview: Preview = {
   tags: ['autodocs'],

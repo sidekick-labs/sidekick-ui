@@ -29,4 +29,14 @@ describe('Callout (a11y)', () => {
     const results = await axe(container)
     expect(results).toHaveNoViolations()
   })
+
+  it('has no axe violations for the success variant', async () => {
+    const { container } = render(
+      <Callout variant="success" title="All good">
+        The operation completed.
+      </Callout>,
+    )
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
 })

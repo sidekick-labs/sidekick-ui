@@ -71,6 +71,7 @@
     "@eslint-react/eslint-plugin": "^4.2.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.48.0",
+    "@storybook/addon-a11y": "^10.3.5",
     "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.19",

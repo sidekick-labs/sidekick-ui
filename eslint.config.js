@@ -32,6 +32,8 @@ export default tseslint.config(
       '@eslint-react/component-hook-factories': 'off',
       '@eslint-react/no-array-index-key': 'off',
       '@eslint-react/set-state-in-effect': 'off',
+      '@eslint-react/static-components': 'off',
+      '@eslint-react/jsx-no-leaked-dollar': 'off',
 
       // React Refresh rules
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],

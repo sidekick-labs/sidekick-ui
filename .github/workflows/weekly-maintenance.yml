@@ -9,6 +9,10 @@ permissions: {}
 
 jobs:
   maintenance:
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     uses: sidekick-labs/.github/.github/workflows/reusable-weekly-maintenance.yml@v1
     with:
       stack: node-lib

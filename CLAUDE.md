@@ -99,6 +99,15 @@ src/
 3. **No side effects besides CSS** — the `sideEffects` field in package.json only allows CSS
 4. **Serialization-free** — components accept plain props, never API response objects directly
 
+5. **Pre-push validation is non-negotiable** — `pre-push-lint.sh` runs Prettier, ESLint, tsc, and Vitest before push. If it fails, fix the underlying issue. Avoid `SKIP_PRE_PUSH_HOOK=1` unless there is a genuine emergency — and even then, fix the root cause before the next push. A broken push here ships a broken `@sidekick-labs/ui` release that simultaneously breaks sidekick-web AND sidekick-harness builds.
+
+6. **Pre-PR verification — sweep before declaring done.** Before marking a component change complete:
+   - **Consumer impact sweep:** for breaking changes to a component's props, exported types, or CSS class names, `rg` for the symbol across BOTH consuming repos (`../sidekick-web/app/frontend/` and `../sidekick-harness/src/frontend/` — these paths assume a sibling checkout layout under the workspace root). If a consumer references it, either keep the API backward-compatible OR bump the major version in `package.json` AND open paired PRs in the consumers.
+   - **Type export sweep:** if you added a new exported type or component, confirm it's re-exported from `src/index.ts` — types not in the barrel are invisible to consumers even if the component bundle includes them. A prior incident: `.d.ts` publish broke because barrel was incomplete.
+   - **Theme/token sweep:** if you added a new CSS variable in `src/styles/theme.css`, verify both dark and light themes define it; a missing `--color-foo` falls back to `unset` and renders invisibly.
+   - **Build sanity:** run `npm run build` locally before push — `dist/` is gitignored, so CI is the first place a broken Vite library build would surface otherwise. Inspect `dist/index.d.ts` to confirm types compiled (look for `export declare` lines for your new component).
+   - **Vitest sweep:** `rg` the renamed/changed identifier in `src/**/*.test.{ts,tsx}` and update fixtures and assertion strings.
+
 ## Claude Code Hooks
 
 ### Signed Commits Hook

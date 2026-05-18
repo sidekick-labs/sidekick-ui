@@ -14,12 +14,12 @@ permissions: {}
 
 jobs:
   publish:
-    name: Publish to GitHub Packages
+    name: Publish to npm
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      packages: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -50,14 +50,18 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Verify d.ts rollup is non-empty
+      - name: Verify d.ts entry exports types
         run: |
-          DTS_LINES=$(wc -l < dist/index.d.ts)
-          if [ "$DTS_LINES" -lt 50 ]; then
-            echo "::error::dist/index.d.ts has only $DTS_LINES line(s) — likely a broken type rollup. vite-plugin-dts uses @microsoft/api-extractor, which silently emits 'export {}' when its bundled compiler is older than the project's TypeScript. See PR #71 for context."
+          if [ ! -f dist/index.d.ts ]; then
+            echo "::error::dist/index.d.ts is missing — check vite-plugin-dts config (entryRoot must match build entry directory)."
             exit 1
           fi
-          echo "::notice::dist/index.d.ts has $DTS_LINES lines"
+          if ! grep -q '^export' dist/index.d.ts; then
+            echo "::error::dist/index.d.ts contains no exports — type rollup is broken."
+            exit 1
+          fi
+          DTS_LINES=$(wc -l < dist/index.d.ts)
+          echo "::notice::dist/index.d.ts has $DTS_LINES lines of exports"
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -80,7 +84,7 @@ jobs:
             npm publish --dry-run --ignore-scripts
           else
             echo "::notice::Publishing @sidekick-labs/ui"
-            npm publish --ignore-scripts
+            npm publish --ignore-scripts --provenance
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

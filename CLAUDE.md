@@ -164,4 +164,4 @@ Note: All hooks are automatically skipped in CI environments.
 
 ## Publishing
 
-Published to GitHub Packages (`npm.pkg.github.com`) via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`. A GitHub Release triggers the publish.
+Published to npm (`registry.npmjs.org`) as a public package via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`. A GitHub Release triggers the publish. The workflow uses `secrets.NPM_TOKEN` (a npmjs.com Automation or Granular Access Token scoped to `@sidekick-labs/ui`).

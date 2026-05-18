@@ -11,6 +11,7 @@ export default defineConfig({
     dts({
       include: ['src'],
       outDir: 'dist',
+      entryRoot: 'src',
       rollupTypes: true,
     }),
   ],

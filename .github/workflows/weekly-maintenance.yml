@@ -17,7 +17,6 @@ jobs:
     with:
       stack: node-lib
       node-version: '20'
-      linear-fallback: true
       lint-commands: |
         npm run lint
         npm run check
@@ -26,4 +25,3 @@ jobs:
         npm run build
     secrets:
       claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      linear-api-key: ${{ secrets.LINEAR_API_KEY }}

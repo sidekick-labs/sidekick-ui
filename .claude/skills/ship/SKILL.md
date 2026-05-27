@@ -76,7 +76,7 @@ git status --porcelain
 # on push, but checking now lets us spot conflicts early instead of mid-push.
 git fetch origin main
 BEHIND=$(git rev-list --count HEAD..origin/main)
-[ "$BEHIND" -gt 0 ] && echo "INFO: branch is $BEHIND commit(s) behind origin/main — pre-push-prepare will auto-rebase"
+[ "$BEHIND" -gt 0 ] && echo "INFO: branch is $BEHIND commit(s) behind origin/main — pre-push-prepare will auto-rebase (no manual action needed)"
 
 # (f) node_modules present in this worktree (worktrees don't share them with
 # the main checkout — pre-push-lint.sh silently uses the wrong tree otherwise).
@@ -89,7 +89,6 @@ If any **ABORT** line fired, stop and surface the error to the user. Never work 
 
 ```bash
 git branch --show-current
-git merge-base HEAD origin/main
 git status
 git diff HEAD
 git log $(git merge-base HEAD origin/main)..HEAD --oneline
@@ -100,11 +99,13 @@ gh pr view --json url,state 2>/dev/null || echo "No PR exists"
 
 ### 2. Detect release-flavored changes (route to RELEASING.md instead)
 
+Check the **content** of the diff, not just the filename — routine dependency bumps modify `package.json` without touching the `version` field and must stay in this skill:
+
 ```bash
-git diff $(git merge-base HEAD origin/main)..HEAD --name-only | grep -E '^(package\.json|package-lock\.json|CHANGELOG\.md)$'
+git diff $(git merge-base HEAD origin/main)..HEAD -- package.json | grep -E '^[-+].*"version"'
 ```
 
-If `package.json`'s `version` field changed, **stop** and route to the release flow in `RELEASING.md`. A version bump goes in its own `chore: release vX.Y.Z` PR followed by a signed tag push — not mixed with feature/fix work. A non-`version` change to `package.json` (e.g. adding a dep) is fine to ship through this skill.
+If that produces output, the `version` field changed — **stop** and route to the release flow in `RELEASING.md`. A version bump goes in its own `chore: release vX.Y.Z` PR followed by a signed tag push, not mixed with feature/fix work. Empty output means it's safe to keep shipping through this skill.
 
 ### 3. Consumer-impact sweep (breaking changes)
 
@@ -177,7 +178,7 @@ BASE=$(git merge-base HEAD origin/main)
 git log $BASE..HEAD --oneline
 ```
 
-**If there are existing commits on the branch**, squash them — the `pre-push-prepare.sh` hook blocks pushes with more than 1 commit ahead of main:
+**Unless `--no-squash` was passed**, squash existing commits on the branch — the `pre-push-prepare.sh` hook blocks pushes with more than 1 commit ahead of main:
 
 ```bash
 git reset --soft $(git merge-base HEAD origin/main)
@@ -191,10 +192,20 @@ feat(scope): short imperative summary (max 72 chars)
 
 Longer description of the change and rationale if needed.
 
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
 ```
+
+**With `--no-squash`**, the branch must already have exactly one commit ahead of main; fold staged changes into it via amend rather than creating a second commit (which the hook would block):
+
+```bash
+git commit --amend --no-edit       # keeps the existing commit message
+# or, to update the message too:
+# git commit --amend
+```
+
+Use this when re-running `/ship` against a single-commit branch (e.g. addressing review feedback after a prior squash).
 
 Prefixes seen in recent merged PRs: `feat`, `fix`, `chore`, `build(deps)`, `build(deps-dev)`, `ci`, `docs`.
 
@@ -215,6 +226,8 @@ If pre-push-prepare rebased history, the same command will succeed (force-with-l
 ### 7. Create the pull request
 
 Match the repo's recent PR template — `## Summary` and `## Test plan` sections, with the Claude Code attribution footer:
+
+If `--draft` was passed, append `--draft` to the command below to open as a draft PR.
 
 ```bash
 gh pr create --title "<conventional commit title matching the commit>" --body "$(cat <<'EOF'

@@ -67,7 +67,7 @@ This ensures any new branch or worktree starts from the latest codebase.
 
 **Naming convention:**
 
-If a name is provided (e.g., from a Linear issue identifier):
+If a name is provided (e.g., from a tracked issue):
 
 ```bash
 git worktree add .worktrees/<name> -b <branch-name> "origin/$DEFAULT_BRANCH"
@@ -75,7 +75,7 @@ git worktree add .worktrees/<name> -b <branch-name> "origin/$DEFAULT_BRANCH"
 
 If no name is provided, generate one from context:
 
-- If starting a Linear issue: use the issue identifier (e.g., `swe-123`)
+- If starting a tracked issue in core-platform-brain: use a `<n>-slug` name (e.g., `123-auth-timeout`)
 - If the user described the task: use a short slug (e.g., `fix-auth-timeout`)
 - Fallback: use today's date in `YYYY-MM-DD` format
 
@@ -121,14 +121,14 @@ If this repo has a `/start` skill, it should always create a worktree as part of
 
 - Worktrees go in `.worktrees/`
 - Always fetch latest before creating
-- Naming follows the `<identifier>` convention (e.g., `.worktrees/swe-123`)
+- Naming follows the `<identifier>` convention (e.g., `.worktrees/123-auth-timeout`)
 
 **Opt-out flags differ by context:**
 
 - `/worktree --stay` — "stay in current checkout" (you invoked the worktree tool, you're opting out of its action; dirty state is allowed)
 - `/start --no-worktree` — if a `/start` skill exists: "don't create a worktree" (dirty state causes a hard stop)
 
-This `/worktree` skill can also be invoked independently when you want to isolate work without picking up a Linear issue.
+This `/worktree` skill can also be invoked independently when you want to isolate work without picking up a tracked issue.
 
 ## Error Handling
 

@@ -39,7 +39,7 @@ ci/<short-slug>       # CI workflow changes
 docs/<short-slug>     # README/CLAUDE/CHANGELOG-only changes
 ```
 
-Linear identifiers are optional here — most sidekick-ui PRs (component additions, dep bumps, CI tweaks) aren't issue-tracked. If a Linear issue exists, prefix the slug (e.g. `feat/aifn-92-button-loading-state`).
+Issue tracking is optional here — most sidekick-ui PRs (component additions, dep bumps, CI tweaks) aren't issue-tracked. If a tracked issue exists in core-platform-brain, prefix the slug with its number (e.g. `feat/92-button-loading-state`).
 
 ## Workflow
 

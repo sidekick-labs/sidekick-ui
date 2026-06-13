@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Finalize changes in sidekick-ui, create a signed commit, open a GitHub PR, then babysit it to a mergeable state and hand the merge off (never merges). Invoke when the user says 'ship', 'create a PR', 'open a pull request', 'push changes', 'finalize', 'ready for review', 'babysit', 'get this merged', or '/ship'."
+description: "Finalize changes in sidekick-ui, create a signed commit, open a GitHub PR, then continues into /babysit to drive the PR to ready. Invoke when the user says 'ship', 'create a PR', 'open a pull request', 'push changes', 'finalize', 'ready for review', or '/ship'."
 model: sonnet
 ---
 
@@ -267,79 +267,22 @@ EOF
 - Added `--color-foo` / `--radius-bar` in both dark and light themes.
 ```
 
-## Babysit to merge (always-on)
+## Hand off to babysit (always-on)
 
-Opening the PR is not the end of `/ship`. After the PR exists, **drive it to a
-mergeable state and then hand the merge off** — don't stop at "PR created," and
-don't merge it yourself (merging is a human decision — workspace CLAUDE.md
-Critical Rule #7).
+Opening the PR is not the end of `/ship`. Unless the PR is a draft, **continue
+into the babysit loop now** — don't stop at "PR created."
 
-**Skip this phase entirely if the PR is a draft** — report the URL and stop. A
-draft signals the work isn't ready for the merge path yet.
+Read `~/Workspace/sidekick-labs/.claude/skills/babysit/SKILL.md` and follow its
+loop **inline**: read PR state → address review findings → fix failing CI →
+rebase if behind → re-validate (re-running this skill's own validation steps) →
+amend the single commit and `--force-with-lease` → iterate to the ready gate.
+`/babysit` owns what happens at the gate (merge once the Rule #7 bar holds, or
+hand off if a safeguard is missing); the staging deploy-watch + health probe is
+`/land`. Do **not** re-invoke `/ship` or `/babysit` via the Skill tool — read
+the file and apply it inline.
 
-Otherwise loop until the **ready gate** passes or a **stop condition** trips:
-
-1. **Read PR state.**
-
-   ```bash
-   gh pr view <n> --json number,headRefName,baseRefName,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,isDraft
-   ```
-
-   plus review threads and comments (`gh pr view <n> --comments`,
-   `gh api repos/<owner>/<repo>/pulls/<n>/reviews`, and `.../pulls/<n>/comments`
-   for inline threads).
-
-2. **Address review findings.** For each unresolved, actionable comment or
-   requested change, make the fix **in this worktree** following the repo's
-   conventions, then re-run this skill's own validation / pre-flight steps
-   before pushing. Reply to or resolve the thread so it's clear it was handled.
-   A comment that needs a product/owner decision → stop and ask (see stop
-   conditions).
-
-3. **Fix failing CI.** Pull the failing job's log (`gh pr checks <n>`,
-   `gh run view <id> --log-failed`), reproduce locally where feasible, and fix
-   the root cause. Never disable, skip, or weaken a check to go green.
-
-4. **Rebase if behind.** If the branch is behind its base or conflicted, rebase
-   on the base branch and resolve conflicts honestly. Re-push the same way this
-   skill's push step does (so the same pre-push checks run) — with
-   `--force-with-lease`, **never** `--force`. Never bypass signing and never
-   reach for `LEFTHOOK=0` or other push bypasses.
-
-5. **Re-check.** Push fixes, let CI re-run, re-read state. Iterate.
-
-**Ready gate (all must hold):**
-
-- every required check has **actually run and is green** (`statusCheckRollup` —
-  no required failures). An empty/absent rollup means CI hasn't started yet —
-  wait and re-read; never treat "no checks reported" as a pass;
-- `reviewDecision == APPROVED`, or the repo genuinely requires no review. An
-  empty `reviewDecision` with a requested reviewer still pending is **not** a
-  pass — that's "awaiting review," so hand off and say so. No unresolved
-  blocking change-requests remain;
-- `mergeable == MERGEABLE` — not behind, no conflicts;
-- not a draft.
-
-When the gate holds, **stop and hand off**: report the PR URL and state plainly
-that it is ready to merge and awaiting the user. **Do not merge** — that's the
-user's call (Critical Rule #7).
-
-**Stop conditions — pause, summarize, and ask the user:**
-
-- a comment needs a **product/owner decision** (scope, a trade-off, "is this
-  what you actually want") rather than a mechanical fix;
-- the **same required check keeps failing after ~3 fix attempts**, or it's
-  environmental/flaky-but-required and you can't resolve it;
-- you've gone **~3 full loops without converging** on the ready gate (e.g. a
-  base that keeps moving, oscillating fixes) — stop and report rather than
-  looping indefinitely;
-- a fix would be **destructive or out of scope** (rewriting shared history,
-  touching unrelated code, force-pushing over others' commits, disabling a
-  check, relaxing branch protection);
-- a finding raises a **security or privacy concern**;
-- merge conflicts you can't resolve with confidence;
-- branch protection needs an approval you **cannot** satisfy (a required human
-  reviewer / CODEOWNERS).
+**If `--draft` was passed, skip babysit** — report the PR URL and stop. A draft
+signals the work isn't ready for the merge path yet.
 
 ## Output
 

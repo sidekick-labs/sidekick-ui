@@ -12,11 +12,11 @@ Finalize changes in the `@sidekick-labs/ui` shared component library, create a s
 
 This skill creates and updates **code PRs** only. It does **NOT**:
 
-- Merge PRs to main (merging is a human decision — workspace CLAUDE.md Critical Rule #7)
+- Run the merge itself directly — that happens in the `/babysit` phase `/ship` continues into, which merges autonomously once the Rule #7 gate holds (workspace CLAUDE.md Critical Rule #7)
 - Delete branches after merge
 - Tag a release / publish to npm — releases follow the separate **tag-driven** workflow documented in `RELEASING.md`. Version bumps + CHANGELOG entries land in their own dedicated `chore: release vX.Y.Z` PR; do not bundle them with feature/fix work.
 
-**Important:** "Ship" means create/update a PR and then babysit it to a mergeable state — addressing review findings, fixing CI, and rebasing as needed — and finally **hand the merge off** to the user. It never merges and never publishes; the merge itself is always a human decision.
+**Important:** "Ship" means create/update a PR and then continue into `/babysit` — addressing review findings, fixing CI, and rebasing as needed — which merges it autonomously once the Rule #7 gate holds (required CI green, mergeable, any required review satisfied). `/ship` itself never publishes; the merge happens in the `/babysit` phase it continues into.
 
 ## Why this skill exists (vs. the generic workspace fallback)
 
@@ -290,13 +290,13 @@ After completing the workflow, report:
 
 1. The commit hash and message
 2. The PR URL
-3. Whether the PR is **ready to merge** (ready gate passed — handed off, awaiting the user) or **blocked / awaiting the user** (which stop condition tripped, or still awaiting review/CI)
+3. Whether the PR was **merged** (the ready gate held, so the `/babysit` phase merged it autonomously — Rule #7) or **blocked / handed off** (which stop condition tripped — e.g. a required human review it can't provide — or still awaiting review/CI)
 4. Whether a paired consumer PR is needed (and which repos)
 5. Whether a release/version bump is queued separately
 
 ## Rules (must)
 
-1. **Never merge PRs** (workspace CLAUDE.md Critical Rule #7) — open + push + report, stop short of merge.
+1. **`/ship` doesn't run `gh pr merge` itself** — open + push, then continue into the `/babysit` phase, which merges autonomously once the Rule #7 gate holds (workspace CLAUDE.md Critical Rule #7).
 2. **Worktree-only edits** (workspace CLAUDE.md Rule #3).
 3. **`LEFTHOOK=0` only** for git pushes — no `SKIP_PRE_PUSH_HOOK`, `SKIP_PRE_PUSH_PREPARE`, `SKIP_SIGNED_COMMITS_HOOK`, or `ALLOW_MULTIPLE_COMMITS` bypasses without explicit user permission (workspace CLAUDE.md Rule #4).
 4. **Never bypass signing** (workspace CLAUDE.md Rule #5) — no `--no-gpg-sign`, `-c commit.gpgsign=false`, or `SKIP_SIGNED_COMMITS_HOOK=1`. If signing fails, surface the error and stop.

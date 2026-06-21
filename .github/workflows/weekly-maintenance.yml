@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
       id-token: write
       security-events: read
-    uses: sidekick-labs/.github/.github/workflows/reusable-weekly-maintenance.yml@v2
+    uses: sidekick-labs/.github/.github/workflows/reusable-weekly-maintenance.yml@v3
     with:
       stack: node-lib
       node-version: '20'

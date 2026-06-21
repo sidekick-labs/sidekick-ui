@@ -1,0 +1,109 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="Foundations/Introduction" />
+
+# @sidekick-labs/ui
+
+This is the Storybook for **`@sidekick-labs/ui`** — the shared React 19 component
+library (design system) for the Sidekick Labs platform. It is built with
+TypeScript, Radix UI primitives, and Tailwind CSS v4, published to npm as a
+scoped package, and consumed by both **sidekick-web** and **sidekick-harness**.
+
+Storybook runs the components in isolation — no Rails, no Fastify, no Inertia —
+so designers, copywriters, and reviewers can browse the real UI without booting
+either consuming app.
+
+## How the sidebar is organised
+
+The catalog is a single **Components** tier, split by kind:
+
+- **UI** — base primitives that wrap Radix and styled variants (Button, Card,
+  Dialog, Checkbox, Select, Tabs, Tooltip, DataTable, …). Review one piece of
+  UI in isolation from pure props.
+- **Business** — shared, slightly higher-level pieces composed from the
+  primitives and reused across both consuming apps.
+
+Each component story also has an auto-generated **Docs** tab (powered by
+`@storybook/addon-docs`) that lists its props, types, and defaults, plus an
+**Accessibility** panel (`@storybook/addon-a11y`).
+
+## Design tokens
+
+Theming is driven entirely by **CSS custom properties** — components never
+hardcode colors. The full set lives in
+[`src/styles/theme.css`](https://github.com/sidekick-labs/sidekick-ui/blob/main/src/styles/theme.css)
+inside a Tailwind v4 `@theme` block, so every token is also available as a
+Tailwind utility (e.g. `bg-primary`, `text-text-secondary`, `rounded-md`).
+
+### Color roles
+
+Colors are semantic (named by role, not by hue) so the same component renders
+correctly in either theme. Each role has a base, a `-hover`, and a
+`-foreground` (the readable text/icon color on top of it):
+
+| Token group | Variables                                                                      | Purpose                               |
+| ----------- | ------------------------------------------------------------------------------ | ------------------------------------- |
+| Surfaces    | `--color-background`, `--color-surface`, `--color-surface-hover`               | Page and panel backgrounds            |
+| Borders     | `--color-border`, `--color-border-hover`                                       | Hairlines and outlines                |
+| Primary     | `--color-primary`, `--color-primary-hover`, `--color-primary-foreground`       | Sidekick lime-green — primary actions |
+| Secondary   | `--color-secondary`, `--color-secondary-hover`, `--color-secondary-foreground` | Neutral secondary actions             |
+| Accent      | `--color-accent`, `--color-accent-hover`, `--color-accent-foreground`          | Cyan accent                           |
+| Info        | `--color-info`, `--color-info-hover`, `--color-info-foreground`                | Informational state                   |
+| Success     | `--color-success`, `--color-success-hover`, `--color-success-foreground`       | Positive / success state              |
+| Danger      | `--color-danger`, `--color-danger-hover`, `--color-danger-foreground`          | Destructive / error state             |
+| Warning     | `--color-warning`, `--color-warning-hover`, `--color-warning-foreground`       | Caution state                         |
+| Muted       | `--color-muted`, `--color-muted-hover`, `--color-muted-foreground`             | De-emphasized backgrounds/text        |
+| Text        | `--color-text`, `--color-text-secondary`, `--color-text-muted`                 | Foreground text hierarchy             |
+
+### Radius and typography
+
+| Token         | Value                          | Purpose                   |
+| ------------- | ------------------------------ | ------------------------- |
+| `--radius-sm` | `0.25rem`                      | Small corner radius       |
+| `--radius-md` | `0.375rem`                     | Default control radius    |
+| `--radius-lg` | `0.5rem`                       | Cards and larger surfaces |
+| `--font-sans` | `Rubik`, then system fallbacks | Default UI typeface       |
+
+Animation keyframes (`--animate-fade-in`, `--animate-accordion-down`,
+`--animate-accordion-up`) live in `src/styles/animations.css`.
+
+## Dark / light theme
+
+The library ships **dark as the default** (Sidekick black-and-white with lime
+green) and a clean light theme.
+
+- Each color role resolves to its **dark** value in the `@theme` block.
+- A `[data-theme='light']` selector remaps every role to its `*-light`
+  counterpart — so toggling a theme is a single attribute on an ancestor
+  element, never a per-component change.
+
+Use the **Theme** toolbar control at the top of Storybook (paintbrush icon) to
+switch between **Dark** and **Light**. The preview decorator sets
+`data-theme="light"` on the story wrapper accordingly, which is exactly how a
+consuming app opts a subtree into the light theme.
+
+## How consuming apps use it
+
+`@sidekick-labs/ui` exposes two entry points:
+
+```ts
+// Components, hooks, and utilities (named exports only — no default exports)
+import { Button, Card, DataTable, cn } from '@sidekick-labs/ui'
+
+// Compiled Tailwind theme + tokens (import once, app-wide)
+import '@sidekick-labs/ui/styles'
+```
+
+Both **sidekick-web** (Rails + Inertia.js) and **sidekick-harness**
+(Fastify + Inertia.js) provide React 19 / React-DOM 19 as peer dependencies and
+import the stylesheet once at their entrypoint. Because theming is token-based,
+an app can re-skin or theme-switch the whole library without touching component
+code.
+
+## How to browse
+
+1. Expand **Components** in the left sidebar and pick **UI** or **Business**.
+2. Click a story to see it in the **Canvas**.
+3. Switch to the **Docs** tab for auto-generated prop details.
+4. Use the **Theme** toolbar to check the component in both dark and light.
+5. Open the **Accessibility** panel to review a11y findings.

@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-22
+
+### Fixed
+
+- **Restored the type-declaration build.** Reverted `vite-plugin-dts` `^5.0.2` → `^4.5.4` and `typescript` `^6.0.3` → `^5.9.3`. Dependabot #122 over-bumped this toolchain: `vite-plugin-dts@5` (rewritten on `unplugin-dts`) ignores the configured `rollupTypes: true`, and TS 6 is too new for the bundled API Extractor — together they silently emitted an empty `export {}` `dist/index.d.ts`. **v0.7.0 was tagged but never published** because `publish.yml`'s d.ts guard blocked it; 0.7.1 supersedes it and carries all of 0.7.0's changes below.
+- **Hardened the publish d.ts guard** (`publish.yml`) so it now fails on an empty `export {}` rollup: it requires real declarations (`declare` / named `export type|interface|…`) and a minimum line count, not just the file existing with some `^export` line.
+
+### Changed (dev)
+
+- chore(deps): block major-version dependabot bumps of `typescript`, `vite-plugin-dts`, and `@microsoft/api-extractor` (`.github/dependabot.yml` `ignore`) so this trap can't return silently. Patch/minor updates still flow.
+
 ## [0.7.0] - 2026-06-22
+
+> **Superseded by 0.7.1 — never published.** This version was tagged but its
+> publish was blocked by the d.ts guard (empty-types regression from #122; see
+> 0.7.1). All changes below shipped in 0.7.1.
 
 ### Added
 
@@ -143,7 +158,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Packages publishing as `@sidekick-labs/ui` (#11)
 - GitHub Actions CI and publish workflows
 
-[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.1...v0.7.1
+[0.7.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.2.0...v0.3.0

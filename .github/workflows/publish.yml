@@ -61,7 +61,26 @@ jobs:
             echo "::error::dist/index.d.ts contains no exports — type rollup is broken."
             exit 1
           fi
+          # Guard against a "successful" build that silently emits an empty
+          # stub. vite-plugin-dts@5 + a too-new TypeScript make API Extractor
+          # roll types up to just `export { }` (sidekick-ui#122 → v0.7.0 was
+          # tagged but never published). A file that contains ONLY an empty
+          # export object — and no real declarations — must fail the gate.
+          if ! grep -qE '\bdeclare\b|^export[[:space:]]+(declare|type|interface|function|const|class|default)\b' dist/index.d.ts; then
+            echo "::error::dist/index.d.ts has no real type declarations (looks like an empty 'export {}' stub) — type rollup is broken. See sidekick-ui#122."
+            echo "::group::dist/index.d.ts (first 40 lines)"
+            head -n 40 dist/index.d.ts
+            echo "::endgroup::"
+            exit 1
+          fi
           DTS_LINES=$(wc -l < dist/index.d.ts)
+          if [ "$DTS_LINES" -lt 20 ]; then
+            echo "::error::dist/index.d.ts is only $DTS_LINES lines — implausibly small for the full public API. Suspect a broken type rollup."
+            echo "::group::dist/index.d.ts"
+            cat dist/index.d.ts
+            echo "::endgroup::"
+            exit 1
+          fi
           echo "::notice::dist/index.d.ts has $DTS_LINES lines of exports"
 
       - name: Verify package contents

@@ -7,7 +7,13 @@ import eslintConfigPrettier from 'eslint-config-prettier'
 export default tseslint.config(
   // Ignore patterns
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.vite/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/coverage/**',
+      '**/.vite/**',
+      '**/storybook-static/**',
+    ],
   },
 
   // Base configurations

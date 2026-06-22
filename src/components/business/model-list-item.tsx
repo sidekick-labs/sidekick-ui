@@ -109,17 +109,31 @@ const ModelListItem = React.forwardRef<HTMLDivElement, ModelListItemProps>(
               <div className="flex items-center gap-1.5">
                 {model.capabilities.map((cap) => {
                   const { Icon, label } = getCapabilityIcon(cap)
+                  // When the whole row is interactive (role="button" via onSelect),
+                  // the capability indicator must NOT itself be a button — a button
+                  // nested in a button fails axe `nested-interactive`. In that case
+                  // render a non-interactive <span> (the sr-only label still names
+                  // it, and the row carries focus). When the row is non-interactive,
+                  // keep a focusable <button> so the tooltip is keyboard-reachable.
+                  const triggerClass =
+                    'flex items-center justify-center text-[var(--color-info-text)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)] rounded-sm'
                   return (
                     <Tooltip key={cap}>
                       <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex items-center justify-center text-[var(--color-info)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)] rounded-sm"
-                          onClick={onSelect ? (e) => e.stopPropagation() : undefined}
-                        >
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                          <span className="sr-only">{label}</span>
-                        </button>
+                        {onSelect ? (
+                          // Stop the click from bubbling to the row's onSelect.
+                          // A plain <span> with an onClick is NOT an interactive
+                          // role, so it doesn't trigger axe `nested-interactive`.
+                          <span className={triggerClass} onClick={(e) => e.stopPropagation()}>
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                            <span className="sr-only">{label}</span>
+                          </span>
+                        ) : (
+                          <button type="button" className={triggerClass}>
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                            <span className="sr-only">{label}</span>
+                          </button>
+                        )}
                       </TooltipTrigger>
                       <TooltipContent>{label}</TooltipContent>
                     </Tooltip>

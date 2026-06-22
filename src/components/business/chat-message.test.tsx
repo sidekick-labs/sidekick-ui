@@ -60,7 +60,11 @@ describe('ChatMessage', () => {
 
   it('renders streaming indicator when isStreaming is true', () => {
     const { container } = render(<ChatMessage role="assistant" content="Thinking" isStreaming />)
-    expect(within(container).getByLabelText('Streaming')).toBeInTheDocument()
+    // The cursor is a decorative, aria-hidden element (the streaming state is
+    // announced via the bubble's aria-busy, asserted separately below).
+    const indicator = container.querySelector('.animate-pulse')
+    expect(indicator).toBeInTheDocument()
+    expect(indicator).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('sets aria-busy on the bubble when streaming', () => {
@@ -77,7 +81,7 @@ describe('ChatMessage', () => {
 
   it('does not render streaming indicator by default', () => {
     const { container } = render(<ChatMessage role="assistant" content="Done" />)
-    expect(within(container).queryByLabelText('Streaming')).not.toBeInTheDocument()
+    expect(container.querySelector('.animate-pulse')).not.toBeInTheDocument()
   })
 
   it('aligns user messages to the right', () => {

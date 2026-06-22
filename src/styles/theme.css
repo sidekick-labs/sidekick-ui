@@ -20,16 +20,18 @@
   --color-accent-hover: #0891b2;
   --color-accent-foreground: #000000;
 
-  --color-info: #3b82f6;
-  --color-info-hover: #2563eb;
+  /* #3b82f6 on white text was 3.68:1 (fails WCAG AA); #2563eb gives 5.17:1. */
+  --color-info: #2563eb;
+  --color-info-hover: #1d4ed8;
   --color-info-foreground: #ffffff;
 
   --color-success: #22c55e;
   --color-success-hover: #16a34a;
   --color-success-foreground: #000000;
 
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
+  /* #ef4444 on white text was 3.76:1 (fails WCAG AA); #dc2626 gives 4.83:1. */
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
   --color-danger-foreground: #ffffff;
 
   --color-warning: #f59e0b;
@@ -42,7 +44,19 @@
 
   --color-text: #ffffff;
   --color-text-secondary: #d4d4d4;
-  --color-text-muted: #737373;
+  /* #737373 on dark surfaces was ~3.85–4.18:1 (fails WCAG AA for body text);
+     #a3a3a3 gives 7.24–7.85:1. */
+  --color-text-muted: #a3a3a3;
+
+  /* Semantic colors used as *text/icon* on dark surfaces. The solid `--color-*`
+     tokens above are tuned as fills behind white text (e.g. badges/buttons), so
+     they are too dark to double as foreground text on a near-black surface. These
+     `-text` variants are tuned to clear WCAG AA (>=4.5:1) as text on the darkest
+     surfaces in use (#0a0a0a / #151515). Components render colored text via these. */
+  --color-info-text: #60a5fa;
+  --color-success-text: #22c55e;
+  --color-warning-text: #f59e0b;
+  --color-danger-text: #f87171;
 
   /* Light Theme - Clean White with Lime Green accents */
   --color-background-light: #ffffff;
@@ -63,8 +77,9 @@
   --color-accent-hover-light: #0e7490;
   --color-accent-foreground-light: #ffffff;
 
-  --color-info-light: #3b82f6;
-  --color-info-hover-light: #2563eb;
+  /* #3b82f6 on white text was 3.68:1 (fails WCAG AA); #2563eb gives 5.17:1. */
+  --color-info-light: #2563eb;
+  --color-info-hover-light: #1d4ed8;
   --color-info-foreground-light: #ffffff;
 
   --color-success-light: #16a34a;
@@ -81,11 +96,19 @@
 
   --color-muted-light: #f5f5f5;
   --color-muted-hover-light: #e5e5e5;
-  --color-muted-foreground-light: #737373;
+  /* #737373 on #f5f5f5 muted bg was 4.35:1 (fails AA); #5c5c5c gives 6.13:1. */
+  --color-muted-foreground-light: #5c5c5c;
 
   --color-text-light: #000000;
   --color-text-secondary-light: #404040;
-  --color-text-muted-light: #737373;
+  /* #737373 on light surfaces was as low as 4.35:1 (fails AA); #5c5c5c gives 6.13–6.69:1. */
+  --color-text-muted-light: #5c5c5c;
+
+  /* Light-theme semantic *text* colors, tuned for >=4.5:1 on light surfaces. */
+  --color-info-text-light: #2563eb;
+  --color-success-text-light: #15803d;
+  --color-warning-text-light: #b45309;
+  --color-danger-text-light: #b91c1c;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
@@ -140,4 +163,9 @@
   --color-text: var(--color-text-light);
   --color-text-secondary: var(--color-text-secondary-light);
   --color-text-muted: var(--color-text-muted-light);
+
+  --color-info-text: var(--color-info-text-light);
+  --color-success-text: var(--color-success-text-light);
+  --color-warning-text: var(--color-warning-text-light);
+  --color-danger-text: var(--color-danger-text-light);
 }

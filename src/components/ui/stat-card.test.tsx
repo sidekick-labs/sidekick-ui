@@ -35,7 +35,7 @@ describe('StatCard', () => {
       <StatCard label="Revenue" value="$1k" trend={{ value: '+12%', direction: 'up' }} />,
     )
     const trendEl = within(container).getByText(/\+12%/)
-    expect(trendEl.className).toContain('text-[var(--color-success)]')
+    expect(trendEl.className).toContain('text-[var(--color-success-text)]')
   })
 
   it('renders trend with down direction', () => {
@@ -43,7 +43,7 @@ describe('StatCard', () => {
       <StatCard label="Errors" value={5} trend={{ value: '-3%', direction: 'down' }} />,
     )
     const trendEl = within(container).getByText(/-3%/)
-    expect(trendEl.className).toContain('text-[var(--color-danger)]')
+    expect(trendEl.className).toContain('text-[var(--color-danger-text)]')
   })
 
   it('renders trend with neutral direction', () => {

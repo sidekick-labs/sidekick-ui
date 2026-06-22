@@ -9,7 +9,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, ...props 
     <div
       ref={ref}
       className={cn(
-        'rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]',
+        // Establish a foreground color alongside the surface background so text
+        // inside the card (incl. unstyled children) inherits a contrast-safe color
+        // instead of falling back to the browser default (black on a dark surface).
+        'rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]',
         className,
       )}
       {...props}

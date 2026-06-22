@@ -17,6 +17,19 @@ updates:
           - 'vite-plugin-dts'
       prod-dependencies:
         dependency-type: 'production'
+    # Block MAJOR bumps of the type-declaration toolchain entirely. Ungrouping
+    # alone (above) still let dependabot open individual major-bump PRs:
+    # sidekick-ui#122 bumped vite-plugin-dts 4→5 AND typescript 5→6, which made
+    # API Extractor silently roll types up to an empty `export {}` stub —
+    # v0.7.0 was tagged but never published (the publish d.ts guard caught it).
+    # Patch/minor updates are still allowed so security fixes flow through.
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'vite-plugin-dts'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@microsoft/api-extractor'
+        update-types: ['version-update:semver-major']
     labels:
       - 'dependencies'
 

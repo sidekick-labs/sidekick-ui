@@ -33,6 +33,12 @@ jobs:
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
+      # Node 22 ships npm 10.x, but OIDC Trusted Publishing (token-free publish
+      # via the GitHub id-token) requires npm >= 11.5.1. Without this, the
+      # publish PUT fails with a misleading E404 even though provenance signs.
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install -g npm@^11
+
       - name: Install dependencies
         run: npm ci
 

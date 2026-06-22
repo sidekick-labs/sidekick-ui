@@ -9,13 +9,13 @@ const Status = React.forwardRef<HTMLSpanElement, StatusProps>(
   ({ className, variant = 'active', children, ...props }, ref) => {
     // active and completed both map to success — intentionally identical as positive states
     const variants = {
-      active: 'text-[var(--color-success)]',
-      online: 'text-[var(--color-info)]',
+      active: 'text-[var(--color-success-text)]',
+      online: 'text-[var(--color-info-text)]',
       offline: 'text-[var(--color-text-muted)]',
-      completed: 'text-[var(--color-success)]',
-      failed: 'text-[var(--color-danger)]',
+      completed: 'text-[var(--color-success-text)]',
+      failed: 'text-[var(--color-danger-text)]',
       cancelled: 'text-[var(--color-text-muted)]',
-      processing: 'text-[var(--color-warning)]',
+      processing: 'text-[var(--color-warning-text)]',
     }
 
     return (

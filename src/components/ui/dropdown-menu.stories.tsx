@@ -60,6 +60,16 @@ export const OpenInteraction: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
+  parameters: {
+    a11y: {
+      // With the menu open, Radix marks the rest of the page `aria-hidden` while
+      // its FocusScope traps focus inside the portal. axe momentarily sees the
+      // (still-focusable) trigger button inside that aria-hidden region and flags
+      // `aria-hidden-focus` — a known false positive for Radix's modal menu, which
+      // manages focus correctly. Scope-disable ONLY this rule for ONLY this story.
+      config: { rules: [{ id: 'aria-hidden-focus', enabled: false }] },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Actions' }))

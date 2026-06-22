@@ -78,9 +78,13 @@ const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
           >
             <div className="whitespace-pre-wrap">{content}</div>
             {isStreaming && (
+              // Decorative blinking cursor. `aria-label` on a label-less generic
+              // <span> is prohibited (axe `aria-prohibited-attr`); the streaming
+              // state is already conveyed via the bubble's aria-live + aria-busy,
+              // so the cursor is purely visual and hidden from assistive tech.
               <span
                 className="inline-block w-1.5 h-4 ml-0.5 bg-current animate-pulse rounded-sm"
-                aria-label="Streaming"
+                aria-hidden="true"
               />
             )}
           </div>

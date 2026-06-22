@@ -11,8 +11,8 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const trendColors = {
-  up: 'text-[var(--color-success)]',
-  down: 'text-[var(--color-danger)]',
+  up: 'text-[var(--color-success-text)]',
+  down: 'text-[var(--color-danger-text)]',
   neutral: 'text-[var(--color-text-muted)]',
 }
 

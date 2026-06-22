@@ -141,7 +141,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
         {label && <FormLabel htmlFor={inputId}>{label}</FormLabel>}
         {children}
         {error && (
-          <p id={errorId} className="text-xs text-[var(--color-danger)] mt-1" role="alert">
+          <p id={errorId} className="text-xs text-[var(--color-danger-text)] mt-1" role="alert">
             {error}
           </p>
         )}

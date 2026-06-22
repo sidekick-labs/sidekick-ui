@@ -13,19 +13,26 @@ const meta: Meta<typeof Checkbox> = {
 export default meta
 type Story = StoryObj<typeof Checkbox>
 
+// Standalone checkboxes have no visible label, so they need an `aria-label`
+// to carry an accessible name (a checkbox with no name fails axe `button-name`).
+// In real usage a checkbox is always paired with a label — see `WithLabel`.
 export const Default: Story = {
-  args: {},
+  args: {
+    'aria-label': 'Example checkbox',
+  },
 }
 
 export const Checked: Story = {
   args: {
     defaultChecked: true,
+    'aria-label': 'Example checkbox',
   },
 }
 
 export const Disabled: Story = {
   args: {
     disabled: true,
+    'aria-label': 'Example checkbox',
   },
 }
 
@@ -33,6 +40,7 @@ export const DisabledChecked: Story = {
   args: {
     disabled: true,
     defaultChecked: true,
+    'aria-label': 'Example checkbox',
   },
 }
 

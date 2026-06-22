@@ -13,23 +13,23 @@ export interface CalloutProps extends React.HTMLAttributes<HTMLDivElement> {
 const variantConfigs = {
   info: {
     container: 'border-[var(--color-info)] bg-[var(--color-info)]/10',
-    icon: <Lightbulb className="w-5 h-5 text-[var(--color-info)]" />,
-    titleColor: 'text-[var(--color-info)]',
+    icon: <Lightbulb className="w-5 h-5 text-[var(--color-info-text)]" />,
+    titleColor: 'text-[var(--color-info-text)]',
   },
   warning: {
     container: 'border-[var(--color-warning)] bg-[var(--color-warning)]/10',
-    icon: <AlertTriangle className="w-5 h-5 text-[var(--color-warning)]" />,
-    titleColor: 'text-[var(--color-warning)]',
+    icon: <AlertTriangle className="w-5 h-5 text-[var(--color-warning-text)]" />,
+    titleColor: 'text-[var(--color-warning-text)]',
   },
   success: {
     container: 'border-[var(--color-success)] bg-[var(--color-success)]/10',
-    icon: <CheckCircle className="w-5 h-5 text-[var(--color-success)]" />,
-    titleColor: 'text-[var(--color-success)]',
+    icon: <CheckCircle className="w-5 h-5 text-[var(--color-success-text)]" />,
+    titleColor: 'text-[var(--color-success-text)]',
   },
   danger: {
     container: 'border-[var(--color-danger)] bg-[var(--color-danger)]/10',
-    icon: <XCircle className="w-5 h-5 text-[var(--color-danger)]" />,
-    titleColor: 'text-[var(--color-danger)]',
+    icon: <XCircle className="w-5 h-5 text-[var(--color-danger-text)]" />,
+    titleColor: 'text-[var(--color-danger-text)]',
   },
   note: {
     container: 'border-[var(--color-primary)] bg-[var(--color-primary)]/10',

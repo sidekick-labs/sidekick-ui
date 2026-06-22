@@ -244,7 +244,9 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
                     </code>
                     <span className="text-[var(--color-text-muted)]">
                       ({hint.type})
-                      {hint.required && <span className="text-[var(--color-danger)] ml-1">*</span>}
+                      {hint.required && (
+                        <span className="text-[var(--color-danger-text)] ml-1">*</span>
+                      )}
                       {hint.description && ` — ${hint.description}`}
                     </span>
                   </li>

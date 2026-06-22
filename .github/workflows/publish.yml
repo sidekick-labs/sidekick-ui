@@ -106,5 +106,3 @@ jobs:
             echo "::notice::Publishing @sidekick-labs/ui"
             npm publish --ignore-scripts --provenance
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -93,5 +93,16 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "sidekick-ops": {
+      "source": {
+        "source": "github",
+        "repo": "sidekick-labs/claude-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "sidekick-workflows@sidekick-ops": true
   }
 }

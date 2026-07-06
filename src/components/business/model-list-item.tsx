@@ -11,11 +11,7 @@ export interface ModelPricing {
 
 /** Known capability identifiers; arbitrary strings are also accepted. */
 export type ModelCapability =
-  | 'streaming'
-  | 'function_calling'
-  | 'batch'
-  | 'vision'
-  | (string & Record<never, never>)
+  'streaming' | 'function_calling' | 'batch' | 'vision' | (string & Record<never, never>)
 
 export interface ModelListItemModel {
   id: string

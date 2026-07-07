@@ -27,5 +27,8 @@ jobs:
       issues: read
       id-token: write
       actions: read
-    uses: sidekick-labs/.github/.github/workflows/claude-agent.yml@main
+    # TEMPORARY (octo-brain#174 validation): pinned to the plugin-clone branch to test
+    # the sidekick-workflows plugin + private-marketplace bot-token clone on ONE lane
+    # before rolling the change to @main. REVERT to @main after validation.
+    uses: sidekick-labs/.github/.github/workflows/claude-agent.yml@feat/sidekick-workflows-plugin-ci
     secrets: inherit

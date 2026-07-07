@@ -220,4 +220,4 @@ Note: All hooks are automatically skipped in CI environments.
 
 Published to npm (`registry.npmjs.org`) as a public package via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`. A GitHub Release triggers the publish.
 
-The publish job runs in the `npm` GitHub Environment (deployment-branch-policy: `main` branch + `v*` tags). It uses `secrets.NPM_TOKEN` as a fallback, but once npm Trusted Publishing is configured on the npmjs.com side (publisher: GitHub Actions, repo: `sidekick-ui`, workflow: `publish.yml`, environment: `npm`), the OIDC `id-token: write` permission lets CI publish without any token at all.
+The publish job runs in the `npm` GitHub Environment (deployment-branch-policy: `main` branch + `v*` tags). npm Trusted Publishing is configured on the npmjs.com side (publisher: GitHub Actions, repo: `sidekick-ui`, workflow: `publish.yml`, environment: `npm`), so the OIDC `id-token: write` permission lets CI publish without any token (requires npm ≥ 11.5.1 on the runner). `secrets.NPM_TOKEN` remains only as a fallback.

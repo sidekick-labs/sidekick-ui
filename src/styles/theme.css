@@ -8,8 +8,8 @@
   --color-border: #1a1a1a;
   --color-border-hover: #2a2a2a;
 
-  --color-primary: #84cc16;
-  --color-primary-hover: #65a30d;
+  --color-primary: #b7ff31;
+  --color-primary-hover: #9bd92a;
   --color-primary-foreground: #000000;
 
   --color-secondary: #404040;
@@ -65,9 +65,9 @@
   --color-border-light: #e5e5e5;
   --color-border-hover-light: #d4d4d4;
 
-  --color-primary-light: #65a30d;
-  --color-primary-hover-light: #4d7c0f;
-  --color-primary-foreground-light: #ffffff;
+  --color-primary-light: #b7ff31;
+  --color-primary-hover-light: #9bd92a;
+  --color-primary-foreground-light: #000000;
 
   --color-secondary-light: #737373;
   --color-secondary-hover-light: #525252;

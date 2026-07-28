@@ -82,12 +82,47 @@ export default defineConfig({
           // module compile/transform time, which regularly exceeds the 15s
           // default on a cold Vite cache (and on CI runners). Give it room —
           // stories themselves execute in milliseconds.
-          testTimeout: 60_000,
+          //
+          // 120s, not 60s, since the viewport matrix below doubles the number
+          // of browser contexts competing for a 2-core CI runner: the binding
+          // constraint is stories sitting QUEUED while their clock runs, not
+          // slow stories. Sibling repos (sidekick-web, luminality-web) were
+          // still flaky at 60s with half this load.
+          testTimeout: 120_000,
           browser: {
             enabled: true,
             provider: playwright(),
             headless: true,
-            instances: [{ browser: 'chromium' }],
+            // Every story is audited at BOTH a phone and a desktop width.
+            //
+            // axe measures the DOM as rendered, so a single viewport only ever
+            // audits one side of every `md:`/`lg:` breakpoint. Vitest browser
+            // mode defaults to a 414x896 phone viewport, so until this landed
+            // the design system's desktop rendering — responsive DataTable
+            // headers, wide Pagination, multi-column layouts — had never been
+            // audited at all. Neither width is a baseline on its own, so run
+            // both and let each instance carry its own viewport.
+            //
+            // Instances of the same browser need distinct `name`s, or the two
+            // derived projects collide as `storybook (chromium)`
+            // (storybookjs/storybook#32427).
+            //
+            // This does NOT affect the Playwright visual-regression job: that
+            // runs from `playwright.config.ts` via `e2e.yml` against the
+            // committed `*-chromium-linux` baselines and shares no config with
+            // this project.
+            instances: [
+              {
+                browser: 'chromium',
+                name: 'storybook-mobile',
+                viewport: { width: 414, height: 896 },
+              },
+              {
+                browser: 'chromium',
+                name: 'storybook-desktop',
+                viewport: { width: 1280, height: 720 },
+              },
+            ],
           },
         },
       },

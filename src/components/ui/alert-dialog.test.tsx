@@ -89,7 +89,7 @@ describe('AlertDialog', () => {
       </AlertDialog>,
     )
     const cancel = screen.getByRole('button', { name: 'Back' })
-    expect(cancel.className).toContain('border-[var(--color-primary)]')
+    expect(cancel.className).toContain('border-[var(--color-primary-text)]')
     expect(cancel.className).not.toContain('hover:bg-[var(--color-surface-hover)]')
   })
 })

@@ -218,7 +218,7 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
           aria-invalid={hasErrors || undefined}
           aria-describedby={hasErrors ? errorId : undefined}
           className={cn(
-            'w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors',
+            'w-full px-3 py-2 rounded-lg border bg-[var(--color-background)] text-[var(--color-text)] font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-text)] transition-colors',
             hasErrors
               ? 'border-[var(--color-danger)] focus:ring-[var(--color-danger)]'
               : 'border-[var(--color-border)]',
@@ -239,7 +239,7 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
               <ul className="space-y-1.5">
                 {schemaHints.map((hint) => (
                   <li key={hint.name} className="flex items-start gap-2">
-                    <code className="text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-1 rounded">
+                    <code className="text-[var(--color-primary-text)] bg-[var(--color-primary)]/10 px-1 rounded">
                       {hint.name}
                     </code>
                     <span className="text-[var(--color-text-muted)]">

@@ -88,15 +88,29 @@ export default defineConfig({
           // constraint is stories sitting QUEUED while their clock runs, not
           // slow stories. Sibling repos (sidekick-web, luminality-web) were
           // still flaky at 60s with half this load.
-          testTimeout: 120_000,
-          // Two instances double the concurrent browser contexts, and the
+          //
+          // Raised again to 180s when the theme axis took the matrix from 2
+          // instances to 4: the queue, not the story, is what burns the clock,
+          // so doubling the browser contexts doubles the worst-case wait a
+          // story can sit through before it starts. Raise this if the matrix
+          // grows again; NEVER trim it to make a slow run look fast.
+          testTimeout: 180_000,
+          // Each instance multiplies the concurrent browser contexts, and the
           // default worker count is per-instance. Left unbounded this is
           // SLOWER, not faster, and on a loaded machine it collapses outright
           // ("Cannot connect to the server in 60 seconds" on every file, which
           // reads like a timeout but is saturation). Measured on this repo's 68
-          // story files: uncapped 21.4s, 4 workers 11.9s, 3 workers 11.7s.
-          // 3 and 4 are within noise here; `3` matches firsttofly-myboard while
-          // jumpdrive-web, fundbright-web and sidekick-harness landed on 4.
+          // story files at TWO instances: uncapped 21.4s, 4 workers 11.9s,
+          // 3 workers 11.7s.
+          //
+          // RE-MEASURED at FOUR instances (2 widths x 2 themes), 2 runs each:
+          // 3 workers 20s/20s, 4 workers 20s/32s, 6 workers 21s/25s, uncapped
+          // 25s/19s. 3 is no slower than any alternative and is by far the most
+          // consistent — and it is the spread, not the median, that turns into
+          // flake on a 2-core CI runner. Held at 3. (firsttofly-myboard also
+          // runs 3; jumpdrive-web, fundbright-web and sidekick-harness landed
+          // on 4.)
+          //
           // Re-measure before changing it, and never lower `testTimeout`.
           maxWorkers: 3,
           browser: {
@@ -136,19 +150,69 @@ export default defineConfig({
             // runs from `playwright.config.ts` via `e2e.yml` against the
             // committed `*-chromium-linux` baselines and shares no config with
             // this project.
+            // ...and under BOTH themes.
+            //
+            // `.storybook/preview.tsx` ships `initialGlobals.theme = 'dark'`,
+            // so for as long as the gate ran a single theme it only ever
+            // audited dark — and the light theme, which the package equally
+            // ships to consumers, rotted unseen: 62 real color-contrast nodes
+            // across 24 stories when first measured
+            // (sidekick-labs/product-brain#297). A theme is not a skin over an
+            // already-audited base; every contrast pair is theme-specific, and
+            // a token that clears AA on #000000 says nothing about #ffffff.
+            //
+            // Theme travels the SAME channel as the width — a Storybook global
+            // pinned per instance — so both keys live in ONE
+            // `storybook/test-initial-globals` object. A per-instance `provide`
+            // REPLACES the plugin's provide object rather than merging into it,
+            // so a second `provide` entry would silently drop the first: keep
+            // them in a single literal.
+            //
+            // The matrix is the full 2x2 (2 widths x 2 themes) rather than a
+            // cheaper 3-cell L, because the axes are genuinely independent:
+            // width decides WHICH elements exist (anything behind a `md:`/`lg:`
+            // breakpoint is unreachable, not passing, at the other width) and
+            // theme decides what colour they are. A light-theme token used only
+            // inside a desktop-only element is audited by exactly one cell.
             instances: [
               {
                 browser: 'chromium',
-                name: 'storybook-mobile',
+                name: 'storybook-mobile-dark',
                 provide: {
-                  'storybook/test-initial-globals': { viewport: { value: 'phone' } },
+                  'storybook/test-initial-globals': {
+                    viewport: { value: 'phone' },
+                    theme: 'dark',
+                  },
                 },
               },
               {
                 browser: 'chromium',
-                name: 'storybook-desktop',
+                name: 'storybook-desktop-dark',
                 provide: {
-                  'storybook/test-initial-globals': { viewport: { value: 'desktop' } },
+                  'storybook/test-initial-globals': {
+                    viewport: { value: 'desktop' },
+                    theme: 'dark',
+                  },
+                },
+              },
+              {
+                browser: 'chromium',
+                name: 'storybook-mobile-light',
+                provide: {
+                  'storybook/test-initial-globals': {
+                    viewport: { value: 'phone' },
+                    theme: 'light',
+                  },
+                },
+              },
+              {
+                browser: 'chromium',
+                name: 'storybook-desktop-light',
+                provide: {
+                  'storybook/test-initial-globals': {
+                    viewport: { value: 'desktop' },
+                    theme: 'light',
+                  },
                 },
               },
             ],

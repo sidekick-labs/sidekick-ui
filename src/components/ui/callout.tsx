@@ -33,8 +33,8 @@ const variantConfigs = {
   },
   note: {
     container: 'border-[var(--color-primary)] bg-[var(--color-primary)]/10',
-    icon: <PenTool className="w-5 h-5 text-[var(--color-primary)]" />,
-    titleColor: 'text-[var(--color-primary)]',
+    icon: <PenTool className="w-5 h-5 text-[var(--color-primary-text)]" />,
+    titleColor: 'text-[var(--color-primary-text)]',
   },
 }
 

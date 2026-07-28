@@ -63,7 +63,7 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
             <button
               type="button"
               onClick={onBackClick}
-              className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 rounded-[var(--radius-sm)]"
+              className="flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-text)] focus-visible:ring-offset-2 rounded-[var(--radius-sm)]"
             >
               <ChevronLeft className="h-4 w-4" />
               Back

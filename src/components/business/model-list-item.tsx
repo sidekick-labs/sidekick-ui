@@ -93,7 +93,7 @@ const ModelListItem = React.forwardRef<HTMLDivElement, ModelListItemProps>(
         active={selected}
         className={cn(
           onSelect &&
-            'cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:outline-none',
+            'cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--color-primary-text)] focus-visible:outline-none',
           className,
         )}
         {...props}
@@ -112,7 +112,7 @@ const ModelListItem = React.forwardRef<HTMLDivElement, ModelListItemProps>(
                   // it, and the row carries focus). When the row is non-interactive,
                   // keep a focusable <button> so the tooltip is keyboard-reachable.
                   const triggerClass =
-                    'flex items-center justify-center text-[var(--color-info-text)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary)] rounded-sm'
+                    'flex items-center justify-center text-[var(--color-info-text)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-primary-text)] rounded-sm'
                   return (
                     <Tooltip key={cap}>
                       <TooltipTrigger asChild>

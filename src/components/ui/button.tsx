@@ -23,7 +23,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button'
 
     const baseStyles =
-      'inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium uppercase transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2'
+      'inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium uppercase transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-text)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2'
 
     const variants = {
       primary:
@@ -42,8 +42,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       muted:
         'bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted-hover)] border-[var(--color-border)]',
       outline:
-        'border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-primary-foreground)]',
-      link: 'bg-transparent border-0 text-[var(--color-text)] hover:text-[var(--color-primary)]',
+        'border-[var(--color-primary-text)] text-[var(--color-primary-text)] hover:bg-[var(--color-primary)] hover:text-[var(--color-primary-foreground)] hover:border-[var(--color-primary)]',
+      link: 'bg-transparent border-0 text-[var(--color-text)] hover:text-[var(--color-primary-text)]',
     }
 
     const sizes = {

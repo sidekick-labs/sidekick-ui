@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-28
+
+### Fixed
+
+- **`PopoverContent` now has an accessible name (`aria-dialog-name`).** Radix renders `PopoverContent` as `role="dialog"`, and unlike `Dialog`/`AlertDialog` it has no title slot — so every popover failed axe's `aria-dialog-name` rule (impact: **serious**). `PopoverContent` now falls back to `aria-label="Popover"` when the caller supplies neither `aria-label` nor `aria-labelledby`; a caller-provided value always wins. Consumers running an axe gate at `error` (sidekick-web, sidekick-harness) no longer fail on library-owned popovers (#160).
+
+### Changed
+
+- **CONSUMER-AFFECTING — brand lime standardized on `#B7FF31` (#155).** The primary color token is now the same lime in both themes, replacing the previous Tailwind lime-500/600 pair:
+  - Dark: `--color-primary` `#84cc16` → `#b7ff31`, `--color-primary-hover` `#65a30d` → `#9bd92a`.
+  - Light: `--color-primary-light` `#65a30d` → `#b7ff31`, `--color-primary-hover-light` `#4d7c0f` → `#9bd92a`, and `--color-primary-foreground-light` `#ffffff` → `#000000` (the brighter lime needs black foreground text for AA contrast).
+  - Anything that renders on `--color-primary` in the light theme will now show **black** text/icons instead of white. Apps overriding these tokens locally should re-check their own values.
+
+### Changed (dev)
+
+- Replaced `@storybook/test-runner` with `@storybook/addon-vitest` for the Storybook render + interaction + a11y gate; the gate now runs under Vitest's browser mode and is a required status check on `main` (#160).
+- Dependency maintenance across the prod, dev, and actions groups (#131–#159), including the weekly maintenance sweep (#156). The `typescript` / `vite-plugin-dts` pins that guard the type-declaration rollup (see 0.7.1) remain in place at `^5.9.3` / `^4.5.4`.
+- CI hardening: third-party actions SHA-pinned via pinact plus `.pinact.yaml` (#139); npm upgraded to `>=11.5.1` on the publish runner and the publish switched to pure OIDC Trusted Publishing (#133, #134, #135).
+- Docs: `CLAUDE.md` harmonized to the workspace skeleton with the Storybook how-to extracted into a skill (#146), and npm Trusted Publishing marked live (#145).
+
 ## [0.7.1] - 2026-06-22
 
 ### Fixed

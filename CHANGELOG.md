@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-28
+
 ### Added
 
 - **CONSUMER-AFFECTING — `--color-primary-text`, the brand lime as _ink_ (#167).** A sibling to the `--color-primary` fill, for text, icons, and the borders that carry a component's state or affordance. Dark theme sets it to `#b7ff31`, identical to the fill, so **the dark theme is byte-for-byte unchanged**. Light theme sets it to `#497000` — the same hue (81°) as the brand lime, darkened until it clears WCAG AA as body text (5.83:1 on `#ffffff`, 5.35:1 on the darkest light surface `#f5f5f5`, 5.69:1 on Callout note's `#f8ffea` tint). The lime **fill** is deliberately untouched: `#b7ff31` is correct as a background (black on it is 10.63:1) and was standardized in 0.8.0 (#155); it simply cannot be a foreground on white, where it measures 1.2:1. Consumers rendering lime text or icons via `var(--color-primary)` should move those uses to `var(--color-primary-text)`; fills, tints, and decorative borders stay on `var(--color-primary)`.
@@ -200,7 +202,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Packages publishing as `@sidekick-labs/ui` (#11)
 - GitHub Actions CI and publish workflows
 
-[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.1...v0.7.1
 [0.7.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.0...v0.6.1

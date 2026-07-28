@@ -14,13 +14,13 @@ npm run build                    # Vite library build (ESM + types)
 npm run check                    # TypeScript type check
 
 # Testing
-npm test                         # Vitest (watch mode)
-npm run test:run                 # Vitest (single run)
-npm run test:coverage            # Vitest with v8 coverage
+npm test                         # Vitest `unit` project, jsdom (watch mode)
+npm run test:run                 # Vitest `unit` project (single run)
+npm run test:coverage            # Vitest `unit` project with v8 coverage
 npm run test:e2e                 # Playwright visual regression (auto-spawns Storybook)
-npm run build-storybook          # Build static Storybook (prereq for the a11y gate)
-npm run test-storybook:ci        # Storybook render-smoke + axe a11y gate (serves storybook-static)
-npm run test-storybook           # Same gate against an already-running Storybook (e.g. localhost:6006)
+npm run test:storybook           # Vitest `storybook` project — every story in headless
+                                 #   Chromium: render-smoke + `play` + axe a11y gate
+npm run build-storybook          # Build static Storybook
 
 # Formatting & Linting
 npm run format:check             # Prettier check
@@ -89,7 +89,7 @@ Applicable workspace conventions (see `.claude/conventions/`):
 
 ## Storybook
 
-Storybook is the component catalog and the home of the library's two automated UI gates — Playwright visual regression and the axe a11y gate. Full how-to (run/build, the a11y policy, per-story scope-disable, fixing contrast/token violations) lives in the **`storybook` skill** (`.claude/skills/storybook/`).
+Storybook is the component catalog and the home of the library's two automated UI gates — Playwright visual regression (`npm run test:e2e`) and the story-test gate (`npm run test:storybook`: render-smoke + `play` + axe a11y, via `@storybook/addon-vitest` in Vitest browser mode). The a11y gate is **`parameters.a11y.test: 'error'`** in `.storybook/preview.tsx` — it fails on ANY axe violation, at any impact, since addon-vitest has no impact tiering. Full how-to (the Vitest project layout, the a11y policy, per-story scope-disable, browser-mode gotchas, fixing contrast/token violations) lives in the **`storybook` skill** (`.claude/skills/storybook/`).
 
 Decision rule: `.claude/conventions/storybook-frontend-only-catalog.md`.
 

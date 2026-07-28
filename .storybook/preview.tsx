@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/react'
+import type { Preview } from '@storybook/react-vite'
 // Load the full stylesheet (Tailwind + theme tokens + base layer + animations).
 // Importing only theme.css gives CSS variables but no utility classes, so
 // stories render without Tailwind styling.
@@ -38,6 +38,12 @@ const preview: Preview = {
   ],
   parameters: {
     layout: 'centered',
+    a11y: {
+      // Fail the `storybook` Vitest project (CI `a11y` job) on ANY axe
+      // violation. addon-vitest has no impact tiering — see the `storybook`
+      // skill for the policy and the per-story scope-disable escape hatch.
+      test: 'error',
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

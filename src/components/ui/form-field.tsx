@@ -27,7 +27,7 @@ export interface FormInputProps extends React.InputHTMLAttributes<HTMLInputEleme
 }
 
 const baseInputStyles =
-  'w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] text-sm focus:border-[var(--color-primary)] focus:outline-none transition-colors'
+  'w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] text-sm focus:border-[var(--color-primary-text)] focus:outline-none transition-colors'
 
 const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
   ({ className, error, icon: Icon, ...props }, ref) => {

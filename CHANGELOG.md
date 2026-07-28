@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CONSUMER-AFFECTING — `--color-primary-text`, the brand lime as _ink_ (#167).** A sibling to the `--color-primary` fill, for text, icons, and the borders that carry a component's state or affordance. Dark theme sets it to `#b7ff31`, identical to the fill, so **the dark theme is byte-for-byte unchanged**. Light theme sets it to `#497000` — the same hue (81°) as the brand lime, darkened until it clears WCAG AA as body text (5.83:1 on `#ffffff`, 5.35:1 on the darkest light surface `#f5f5f5`, 5.69:1 on Callout note's `#f8ffea` tint). The lime **fill** is deliberately untouched: `#b7ff31` is correct as a background (black on it is 10.63:1) and was standardized in 0.8.0 (#155); it simply cannot be a foreground on white, where it measures 1.2:1. Consumers rendering lime text or icons via `var(--color-primary)` should move those uses to `var(--color-primary-text)`; fills, tints, and decorative borders stay on `var(--color-primary)`.
+
+### Fixed
+
+- **CONSUMER-AFFECTING — the light theme now passes the a11y gate: 62 `color-contrast` violation nodes across 24 stories fixed** (sidekick-labs/product-brain#297, #167). `.storybook/preview.tsx` pinned `initialGlobals.theme = 'dark'`, so the light palette had never been audited. Five token-level root causes, all fixed in `theme.css` rather than per story:
+  - **34 nodes** — `#b7ff31` as foreground on `#ffffff` / `#f8ffea`, at **1.17–1.20:1**. Fixed by the new `--color-primary-text` ink (see Added), applied in `Button` (`outline`, `link` hover), `Tabs` (active), `Callout` (note title + icon), `List`, `JsonEditor`, `.prose a`, and every `--color-primary` focus ring.
+  - **8 nodes** — white on `--color-accent-light` `#0891b2` at 3.68:1 → **`#0e7490`** (5.36:1); `--color-accent-hover-light` `#0e7490` → `#155e75`.
+  - **8 nodes** — white on `--color-success-light` `#16a34a` at 3.29:1 → **`#15803d`** (5.02:1); `--color-success-hover-light` `#15803d` → `#166534`.
+  - **4 nodes** — white on `--color-warning-light` `#d97706` at 3.18:1 → **`#b45309`** (5.02:1); `--color-warning-hover-light` `#b45309` → `#92400e`.
+  - **8 nodes** — the light semantic inks failing by a rounding width on Callout's `bg-[var(--color-*)]/10` tint (4.48–4.49:1 there, though fine on plain white): `--color-info-text-light` `#2563eb` → **`#1d4ed8`**, `--color-success-text-light` `#15803d` → **`#166534`**, `--color-warning-text-light` `#b45309` → **`#92400e`**. `--color-danger-text-light` already cleared at 5.54:1 and is unchanged.
+
+  The **4.5:1** body-text bar was applied to all of these — the affected labels are 12–16px at normal weight, so none qualify for the 3:1 large-text allowance. The 3:1 non-text bar governs only the focus rings and state borders, which the inks clear with room to spare.
+
+  Apps overriding any of these tokens locally, or hard-coding the old hexes, should re-check their own values. Every dark-theme value is unchanged.
+
+### Changed (dev)
+
+- **The a11y gate now audits both themes as well as both widths (#167).** `vitest.config.ts` declares four browser instances — the full 2×2 of {phone 414, desktop 1280} × {dark, light} — with the theme pinned through the same per-instance `provide` channel as the viewport. The reported test count is now **4× the story count**. `testTimeout` raised 120s → 180s to absorb the extra queueing; `maxWorkers` re-measured at four instances and held at 3 (3 workers 20s/20s, 4 workers 20s/32s, 6 workers 21s/25s, uncapped 25s/19s — 3 has the tightest spread, and spread is what becomes CI flake).
+- `src/test/viewport-matrix.stories.tsx` → **`src/test/audit-matrix.stories.tsx`**, with a second tripwire story asserting the theme axis. Both now derive their expectation from the Vitest instance name, because a dead theme axis fails _silently_ into a legitimate value (`dark`) — unlike the width axis, which fails into a tell-tale 1200 (#167).
+
 ## [0.8.0] - 2026-07-28
 
 ### Fixed

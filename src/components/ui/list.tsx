@@ -92,7 +92,7 @@ const ListItem = React.forwardRef<HTMLDivElement, ListItemProps>(
               type="button"
               key={action.label}
               onClick={action.onClick}
-              className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-primary-text)] transition-colors cursor-pointer"
               aria-label={action.label}
               title={action.label}
             >

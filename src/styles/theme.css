@@ -58,6 +58,19 @@
   --color-warning-text: #f59e0b;
   --color-danger-text: #f87171;
 
+  /* The brand lime as *ink* — text, icons, and the borders that are a
+     component's only affordance or state indicator (outline Button, active Tab,
+     focus rings). The lime FILL (`--color-primary`) is deliberately NOT retuned:
+     #b7ff31 was standardized in v0.8.0 (#155) and works as a fill with black
+     text on it (10.63:1). It simply cannot be a foreground — on white it is
+     1.2:1, which is what produced 34 of the 62 light-theme violations in
+     sidekick-labs/product-brain#297, and no on-brand darkening of the fill can
+     fix that without abandoning the brand colour. On the near-black canvas the
+     fill IS the correct ink, so dark keeps #b7ff31 verbatim and this token is a
+     no-op there; light gets a hue-matched darkened lime below. Same accent-ink
+     pattern as fundbright-web, luminality-web and jumpdrive-static. */
+  --color-primary-text: #b7ff31;
+
   /* Light Theme - Clean White with Lime Green accents */
   --color-background-light: #ffffff;
   --color-surface-light: #fafafa;
@@ -73,8 +86,11 @@
   --color-secondary-hover-light: #525252;
   --color-secondary-foreground-light: #ffffff;
 
-  --color-accent-light: #0891b2;
-  --color-accent-hover-light: #0e7490;
+  /* White on #0891b2 was 3.68:1 — fine for the 3:1 non-text bar, but Badge and
+     Button render 12-14px labels on it, so the 4.5:1 body-text bar applies.
+     #0e7490 gives 5.36:1. */
+  --color-accent-light: #0e7490;
+  --color-accent-hover-light: #155e75;
   --color-accent-foreground-light: #ffffff;
 
   /* #3b82f6 on white text was 3.68:1 (fails WCAG AA); #2563eb gives 5.17:1. */
@@ -82,16 +98,20 @@
   --color-info-hover-light: #1d4ed8;
   --color-info-foreground-light: #ffffff;
 
-  --color-success-light: #16a34a;
-  --color-success-hover-light: #15803d;
+  /* White on #16a34a was 3.29:1; Badge/Button labels are 12-14px, so the 4.5:1
+     body-text bar applies, not the 3:1 non-text one. #15803d gives 5.02:1. */
+  --color-success-light: #15803d;
+  --color-success-hover-light: #166534;
   --color-success-foreground-light: #ffffff;
 
   --color-danger-light: #dc2626;
   --color-danger-hover-light: #b91c1c;
   --color-danger-foreground-light: #ffffff;
 
-  --color-warning-light: #d97706;
-  --color-warning-hover-light: #b45309;
+  /* White on #d97706 was 3.18:1; Badge labels are 12px, so the 4.5:1 body-text
+     bar applies. #b45309 gives 5.02:1. */
+  --color-warning-light: #b45309;
+  --color-warning-hover-light: #92400e;
   --color-warning-foreground-light: #ffffff;
 
   --color-muted-light: #f5f5f5;
@@ -104,11 +124,25 @@
   /* #737373 on light surfaces was as low as 4.35:1 (fails AA); #5c5c5c gives 6.13–6.69:1. */
   --color-text-muted-light: #5c5c5c;
 
-  /* Light-theme semantic *text* colors, tuned for >=4.5:1 on light surfaces. */
-  --color-info-text-light: #2563eb;
-  --color-success-text-light: #15803d;
-  --color-warning-text-light: #b45309;
+  /* Light-theme semantic *text* colors, tuned for >=4.5:1 on light surfaces.
+     Measured against the WORST light background each is rendered on — which is
+     not plain white but Callout's `bg-[var(--color-*)]/10` tint (e.g. #e9effd
+     for info). #2563eb / #15803d / #b45309 landed at 4.48-4.49:1 there: passing
+     nowhere, and failing by a rounding width. Each is taken one Tailwind step
+     darker so the margin is real rather than marginal (5.8-6.2:1 on the tints,
+     6.3-7.1:1 on white). Danger already cleared at 5.54:1 and is unchanged. */
+  --color-info-text-light: #1d4ed8;
+  --color-success-text-light: #166534;
+  --color-warning-text-light: #92400e;
   --color-danger-text-light: #b91c1c;
+
+  /* Brand lime as ink on light surfaces — see --color-primary-text above.
+     hsl(81, 100%, 22%): the SAME hue as #b7ff31, darkened until it clears AA as
+     body text. 5.83:1 on #ffffff, 5.59:1 on #fafafa, 5.35:1 on #f5f5f5 (the
+     darkest light surface in the system) and 5.69:1 on #f8ffea (Callout note's
+     lime tint) — comfortably over 4.5:1 on all four, and far over the 3:1
+     non-text bar that governs its use as a focus ring or active-state border. */
+  --color-primary-text-light: #497000;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
@@ -168,4 +202,6 @@
   --color-success-text: var(--color-success-text-light);
   --color-warning-text: var(--color-warning-text-light);
   --color-danger-text: var(--color-danger-text-light);
+
+  --color-primary-text: var(--color-primary-text-light);
 }

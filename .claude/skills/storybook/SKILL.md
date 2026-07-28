@@ -47,7 +47,7 @@ parameters: {
 
 **`'error'` fails the run on ANY axe violation, at any impact.** This is stricter than the old test-runner hook, which failed only on `serious`/`critical` and `console.warn`'d `moderate`/`minor`. **addon-vitest has no impact tiering** — `'error'` is all-or-nothing (the alternatives are `'todo'`, which reports without failing, and `'off'`). Accepting the stricter bar was the deliberate tradeoff of the migration; the catalog was clean at 168/168 stories when it was made.
 
-Render-smoke comes free: a story that throws on mount fails its test. `play` functions run too, so interaction stories are genuinely exercised. axe runs against the **default (dark) theme** (the catalog's shipped default, set via `initialGlobals.theme`); light-theme contrast is kept correct in `theme.css` but is not separately gated.
+Render-smoke comes free: a story that throws on mount fails its test. `play` functions run too, so interaction stories are genuinely exercised. axe runs against **both themes** — see the matrix below. It used to run only the catalog's shipped default (dark), on the assumption that light-theme contrast was "kept correct in `theme.css`"; it was not, and 62 violations accumulated behind that assumption.
 
 ### Portals are now in scope — this is a real behaviour change
 
@@ -78,7 +78,25 @@ The current sole exception: `UI/DropdownMenu › OpenInteraction` disables `aria
 
 ### Fixing real violations
 
-Fix the **component/token** (labels, `aria-*`, alt text, button `type`, label/input association, **contrast tokens**, heading order), not the gate. Contrast note: `theme.css` separates **fill** tokens (`--color-info`/`--color-danger`/… — tuned as backgrounds behind white `*-foreground` text) from **text** tokens (`--color-{info,success,warning,danger}-text` — tuned as colored text/icons on the near-black surfaces). A single semantic color can't satisfy both directions; render colored _text_ via the `-text` variants. `Card` sets an explicit `text-[var(--color-text)]` so card contents never inherit the browser-default black on a dark surface.
+Fix the **component/token** (labels, `aria-*`, alt text, button `type`, label/input association, **contrast tokens**, heading order), not the gate. `Card` sets an explicit `text-[var(--color-text)]` so card contents never inherit the browser-default black on a dark surface.
+
+**Contrast: fills and inks are separate tokens, on purpose.** `theme.css` splits every colour that appears in both roles:
+
+- **fill** tokens — `--color-primary`, `--color-info`, `--color-success`, `--color-warning`, `--color-danger` — tuned as _backgrounds_ behind their `*-foreground` text.
+- **ink** tokens — `--color-{primary,info,success,warning,danger}-text` — tuned as _foreground_ text, icons, and state borders.
+
+A single value cannot satisfy both directions in both themes, so **never retune a fill to make text pass.** That is doubly true of `--color-primary`: `#b7ff31` is the brand lime, deliberately standardized in v0.8.0 (#155), and it is correct as a fill (black on it is 10.63:1). As text on white it is 1.2:1, and no on-brand darkening of the _fill_ can fix that. The light theme therefore carries `--color-primary-text-light: #497000` — the same hue (81deg), darkened until it clears AA — while the fill stays lime. Dark theme sets `--color-primary-text: #b7ff31`, identical to the fill, so the ink tokens are a no-op there. This is the same accent-ink pattern as `fundbright-web`'s `accent-text`, `luminality-web`'s `--color-*-text` siblings, and `jumpdrive-static`'s `--color-accent-ink`.
+
+**Check which bar applies before changing a token, and say which you applied:**
+
+| bar   | applies to                                                                                  |
+| ----- | ------------------------------------------------------------------------------------------- |
+| 4.5:1 | body text — anything under 18.66px bold / 24px normal. Badge and Button labels are 12-14px. |
+| 3:1   | large text, and non-text UI: icons, focus rings, borders that carry state or affordance.    |
+
+axe's `color-contrast` rule only sees **text**, so the 3:1 non-text cases (focus rings, the outline Button's border, the active Tab underline) are _not_ caught by the gate — they still have to be reasoned about by hand. They use the ink tokens, which clear 4.5:1 and so clear 3:1 with room. Purely decorative brand uses (Callout's tinted container border, Blockquote's rule, ProgressBar, Checkbox fill, chat bubbles) keep the lime fill.
+
+Also measure a semantic ink against the **worst** background it actually renders on, which is usually not white: Callout tints its container with `bg-[var(--color-*)]/10`, and three light inks sat at 4.48-4.49:1 there — failing by a rounding width — while looking fine on `#ffffff`.
 
 ## Browser-mode gotchas
 
@@ -87,22 +105,30 @@ Fix the **component/token** (labels, `aria-*`, alt text, button `type`, label/in
 - **Keep `test` config out of `vite.config.ts`.** Vitest projects and the library build must not share a `test` key (Storybook issue #32444) — all Vitest config lives in `vitest.config.ts`.
 - **`testTimeout` is raised to 120s** on the `storybook` project: the first story in each file absorbs that file's browser-side transform time, which routinely blows the 15s default on a cold Vite cache and on CI runners. The stories themselves run in milliseconds. It was 60s until the viewport matrix below doubled the browser contexts competing for a 2-core CI runner — the binding constraint is stories sitting **queued** while their clock runs, so raise this, never trim it.
 
-## Every story is audited at two viewports
+## Every story is audited at two viewports AND in both themes
 
-`browser.instances` declares **two** Chromium instances:
+`browser.instances` declares **four** Chromium instances — the full 2x2 of {phone, desktop} x {dark, light}:
 
-| instance            | viewport | what it covers                                                               |
-| ------------------- | -------- | ---------------------------------------------------------------------------- |
-| `storybook-mobile`  | 414x896  | The collapsed/responsive rendering, below `md:`.                             |
-| `storybook-desktop` | 1280x720 | Wide DataTable headers, multi-column layouts, full Pagination; clears `xl:`. |
+| instance                  | viewport | theme | what it covers                                                               |
+| ------------------------- | -------- | ----- | ---------------------------------------------------------------------------- |
+| `storybook-mobile-dark`   | 414x896  | dark  | The collapsed/responsive rendering, below `md:`.                             |
+| `storybook-desktop-dark`  | 1280x720 | dark  | Wide DataTable headers, multi-column layouts, full Pagination; clears `xl:`. |
+| `storybook-mobile-light`  | 414x896  | light | Both of the above, against the light palette.                                |
+| `storybook-desktop-light` | 1280x720 | light |                                                                              |
 
 axe measures the DOM **as rendered**, so a single viewport only ever audits one side of every `md:`/`lg:` breakpoint: whatever the active width hides is not passing, it is _unreachable_. Neither width is a baseline on its own.
 
-**This is why the reported test count is 2x the number of stories.** If it ever stops being 2x, an instance silently stopped running — investigate rather than accepting the green.
+**Theme is exactly the same argument, one axis over.** The catalog pins `initialGlobals.theme = 'dark'`, so for as long as the gate ran one theme it audited one theme — and the light palette, which the package equally ships to sidekick-web and sidekick-harness, rotted unseen: **62 `color-contrast` nodes across 24 stories** when it was first measured (sidekick-labs/product-brain#297, fixed in the same PR that added these instances). A theme is not a skin over an already-audited base; every contrast pair is theme-specific, and clearing AA on `#000000` says nothing about `#ffffff`.
 
-Both instances need an explicit `name`. Two unqualified `{ browser: 'chromium' }` entries collide with `project name "storybook (chromium)" already defined` (storybookjs/storybook#32427).
+The two axes are kept independent — a full 2x2, not a cheaper 3-cell L — because width decides **which** elements exist and theme decides **what colour** they are. A light-theme token used only inside a desktop-only element is audited by exactly one of the four cells.
 
-### The width comes from a Storybook global, NOT `browser.instances[].viewport`
+**This is why the reported test count is 4x the number of stories.** If it ever stops being 4x, an instance silently stopped running — investigate rather than accepting the green. (But see the tripwire below: a correct multiple is _not_ evidence the axes differ.)
+
+Every instance needs an explicit `name`. Unqualified `{ browser: 'chromium' }` entries collide with `project name "storybook (chromium)" already defined` (storybookjs/storybook#32427). The names are also load-bearing beyond uniqueness — the tripwire parses them.
+
+**Reporting rule:** never report this gate as an unqualified "clean". Say which cells passed — "4 of 4 (2 widths x 2 themes)".
+
+### Both axes come from Storybook globals, NOT `browser.instances[].viewport`
 
 **This is the trap, and this repo fell into it.** The matrix originally shipped with a `viewport: { width, height }` on each instance. That key is **inert**, twice over:
 
@@ -111,22 +137,33 @@ Both instances need an explicit `name`. Two unqualified `{ browser: 'chromium' }
 
 So **both instances rendered at 1200x900** — 336 tests for one width. It type-checked, and the count did double (two instances genuinely execute), which is exactly why it looked right. **A doubled test count is not evidence the widths differ.**
 
-The width is pinned instead by Storybook's viewport global, per instance, via `provide`, resolved against the `phone` / `desktop` presets in `.storybook/preview.tsx`:
+Width and theme are pinned instead by **Storybook globals**, per instance, via `provide` — the viewport value resolved against the `phone` / `desktop` presets in `.storybook/preview.tsx`, the theme against its `theme` globalType:
 
 ```ts
-{ browser: 'chromium', name: 'storybook-mobile',
-  provide: { 'storybook/test-initial-globals': { viewport: { value: 'phone' } } } }
+{ browser: 'chromium', name: 'storybook-mobile-light',
+  provide: { 'storybook/test-initial-globals': { viewport: { value: 'phone' }, theme: 'light' } } }
 ```
 
-Both halves are required — the `provide` value is a lookup key into `parameters.viewport.options`.
+Both halves of the viewport form are required — the `provide` value is a lookup key into `parameters.viewport.options`.
 
-**A committed tripwire guards it:** `src/test/viewport-matrix.stories.tsx` asserts `expect([414, 1280]).toContain(window.innerWidth)`. Keep it. This failure mode has no other signal — a dependency bump that changes the provide key or `setViewport()`'s precedence collapses both instances to 1200x900 while every story still passes at exactly 2x. If it fails reporting 1200, the matrix is dead: fix the wiring, **do not widen the assertion**.
+**Keep both globals in ONE object literal.** A per-instance `provide` _replaces_ the plugin's provide object rather than merging into it, so a second `provide` entry silently drops the first.
 
-Because a per-instance `provide` _replaces_ the plugin's own provide object rather than merging, also re-check the **gate** still fires after any `provide` change: a temporary story with deliberate `image-alt` + `color-contrast` violations must FAIL in both instances. Delete that one afterwards.
+**A committed tripwire guards both axes:** `src/test/audit-matrix.stories.tsx`. Keep it. These failure modes have no other signal — a dependency bump that changes the provide key, the globals' shape, or `setViewport()`'s precedence collapses every instance back to the defaults while every story still passes at exactly 4x.
+
+Both of its stories cross-check against the **Vitest instance name** (`storybook-{mobile,desktop}-{dark,light}`), which is the one part of the setup a fallback cannot fake. That matters more for theme than for width:
+
+- A dead **width** axis is self-evident — it reports 1200, a value no instance ever asks for.
+- A dead **theme** axis is not. Its failure mode is every instance quietly falling back to `initialGlobals.theme = 'dark'`, a perfectly legitimate value. `expect(['dark','light']).toContain(globals.theme)` would pass in exactly the broken state it exists to catch. Hence `expect(globals.theme).toBe(<theme parsed from the instance name>)`.
+
+`AuditsBothThemes` also asserts the **consequence** — the resolved `<body>` background and the resolved `--color-primary-text` — so a theme global that arrives but never reaches the DOM (broken decorator, broken `[data-theme='light']` block) also fails. If either story fails, the matrix is dead: fix the wiring, **do not widen the assertion**.
+
+After any `provide` change, also re-check the **gate** still fires: a temporary story with deliberate `image-alt` + `color-contrast` violations must FAIL in all four instances. Delete that one afterwards.
 
 ### The canvas is painted under Vitest only
 
 Several stories are deliberately wider than a phone (DataTable pins `w-[640px]`), so at 414px their right-hand columns overhang the decorator's wrapper and sit on the bare `body` — which this design system never paints, because that is the consuming app's job. axe then measures dark-theme foreground tokens against the browser default **white** and reports contrast failures for tokens that are fine on the real `#000000` canvas. That produced 9 phantom violations the moment a genuinely narrow instance ran.
+
+So when a light-theme violation reports `background color: #ffffff`, **check whether that white is the painted canvas or a phantom** before treating it as a defect: in light theme `--color-background` genuinely _is_ `#ffffff`, so the same reading can be real. (For the 62 violations fixed in the light-theme pass it was real — the dark instances were clean throughout, which a phantom would not have allowed.)
 
 The decorator therefore mirrors the theme onto `<html>` and paints `<body>` — but **only when `__vitest_browser__` is set**. That scoping is load-bearing, not incidental: see below.
 

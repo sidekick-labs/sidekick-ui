@@ -87,17 +87,45 @@ Fix the **component/token** (labels, `aria-*`, alt text, button `type`, label/in
 
 ## Every story is audited at two viewports
 
-`browser.instances` declares **two** Chromium instances, each carrying its own `viewport`:
+`browser.instances` declares **two** Chromium instances:
 
-| instance            | viewport | what it covers                                                                        |
-| ------------------- | -------- | ------------------------------------------------------------------------------------- |
-| `storybook-mobile`  | 414x896  | Vitest browser mode's own default — the collapsed/responsive rendering.               |
-| `storybook-desktop` | 1280x720 | Playwright's default — wide DataTable headers, multi-column layouts, full Pagination. |
+| instance            | viewport | what it covers                                                               |
+| ------------------- | -------- | ---------------------------------------------------------------------------- |
+| `storybook-mobile`  | 414x896  | The collapsed/responsive rendering, below `md:`.                             |
+| `storybook-desktop` | 1280x720 | Wide DataTable headers, multi-column layouts, full Pagination; clears `xl:`. |
 
-axe measures the DOM **as rendered**, so a single viewport only ever audits one side of every `md:`/`lg:` breakpoint: whatever the active width hides is not passing, it is _unreachable_. Until this landed the project ran at the 414x896 default only, so the design system's entire desktop rendering had never been audited. Neither width is a baseline on its own.
+axe measures the DOM **as rendered**, so a single viewport only ever audits one side of every `md:`/`lg:` breakpoint: whatever the active width hides is not passing, it is _unreachable_. Neither width is a baseline on its own.
 
 **This is why the reported test count is 2x the number of stories.** If it ever stops being 2x, an instance silently stopped running — investigate rather than accepting the green.
 
 Both instances need an explicit `name`. Two unqualified `{ browser: 'chromium' }` entries collide with `project name "storybook (chromium)" already defined` (storybookjs/storybook#32427).
 
-**The viewport matrix does not touch visual regression.** That job runs from `playwright.config.ts` via `e2e.yml` against the committed `*-chromium-linux` baselines and shares no config with the `storybook` Vitest project. Changing viewports here cannot invalidate a baseline there.
+### The width comes from a Storybook global, NOT `browser.instances[].viewport`
+
+**This is the trap, and this repo fell into it.** The matrix originally shipped with a `viewport: { width, height }` on each instance. That key is **inert**, twice over:
+
+1. `@vitest/browser-playwright` 4.1.x has its `options.viewport ??= this.project.config.browser.viewport` line commented out behind a `// TODO: investigate the consequences for Vitest 5`, so `browser.viewport` never reaches the Playwright context.
+2. `@storybook/addon-vitest` calls `page.viewport()` itself before every story and, with no Storybook viewport selected, uses its hardcoded 1200x900.
+
+So **both instances rendered at 1200x900** — 336 tests for one width. It type-checked, and the count did double (two instances genuinely execute), which is exactly why it looked right. **A doubled test count is not evidence the widths differ.**
+
+The width is pinned instead by Storybook's viewport global, per instance, via `provide`, resolved against the `phone` / `desktop` presets in `.storybook/preview.tsx`:
+
+```ts
+{ browser: 'chromium', name: 'storybook-mobile',
+  provide: { 'storybook/test-initial-globals': { viewport: { value: 'phone' } } } }
+```
+
+Both halves are required — the `provide` value is a lookup key into `parameters.viewport.options`.
+
+**A committed tripwire guards it:** `src/test/viewport-matrix.stories.tsx` asserts `expect([414, 1280]).toContain(window.innerWidth)`. Keep it. This failure mode has no other signal — a dependency bump that changes the provide key or `setViewport()`'s precedence collapses both instances to 1200x900 while every story still passes at exactly 2x. If it fails reporting 1200, the matrix is dead: fix the wiring, **do not widen the assertion**.
+
+Because a per-instance `provide` _replaces_ the plugin's own provide object rather than merging, also re-check the **gate** still fires after any `provide` change: a temporary story with deliberate `image-alt` + `color-contrast` violations must FAIL in both instances. Delete that one afterwards.
+
+### The canvas is painted under Vitest only
+
+Several stories are deliberately wider than a phone (DataTable pins `w-[640px]`), so at 414px their right-hand columns overhang the decorator's wrapper and sit on the bare `body` — which this design system never paints, because that is the consuming app's job. axe then measures dark-theme foreground tokens against the browser default **white** and reports contrast failures for tokens that are fine on the real `#000000` canvas. That produced 9 phantom violations the moment a genuinely narrow instance ran.
+
+The decorator therefore mirrors the theme onto `<html>` and paints `<body>` — but **only when `__vitest_browser__` is set**. That scoping is load-bearing, not incidental: see below.
+
+**The viewport matrix does not touch visual regression** — that job runs from `playwright.config.ts` via `e2e.yml` against the committed `*-chromium-linux` baselines and shares no Vitest config. **But `.storybook/preview.tsx` is NOT insulated the same way**: `e2e/storybook.spec.ts` takes FULL-PAGE screenshots of the preview iframe, so anything the decorator paints unconditionally _will_ invalidate all 14 baselines. Hence the `__vitest_browser__` guard. Before changing the decorator, check whether the change is visible in a full-page screenshot, and remember **local runs write `*-darwin` files and pass without ever comparing** — only CI's linux run is evidence.

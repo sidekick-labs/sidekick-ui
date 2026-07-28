@@ -83,4 +83,21 @@ Fix the **component/token** (labels, `aria-*`, alt text, button `type`, label/in
 - **Tailwind must be mirrored into Storybook's Vite pipeline.** `.storybook/main.ts`'s `viteFinal` adds `@tailwindcss/vite` via `mergeConfig`. Without it stories render unstyled — which both invalidates visual baselines **and** produces bogus `color-contrast` violations.
 - **Radix + React must be pre-bundled.** `.storybook/main.ts` sets `optimizeDeps.include` for `react*` and every `@radix-ui/*` package. Without it, portal content mounted mid-`play` lazy-loads a second React copy and crashes with `Cannot read properties of null (reading 'useRef')`.
 - **Keep `test` config out of `vite.config.ts`.** Vitest projects and the library build must not share a `test` key (Storybook issue #32444) — all Vitest config lives in `vitest.config.ts`.
-- **`testTimeout` is raised to 60s** on the `storybook` project: the first story in each file absorbs that file's browser-side transform time, which routinely blows the 15s default on a cold Vite cache and on CI runners. The stories themselves run in milliseconds.
+- **`testTimeout` is raised to 120s** on the `storybook` project: the first story in each file absorbs that file's browser-side transform time, which routinely blows the 15s default on a cold Vite cache and on CI runners. The stories themselves run in milliseconds. It was 60s until the viewport matrix below doubled the browser contexts competing for a 2-core CI runner — the binding constraint is stories sitting **queued** while their clock runs, so raise this, never trim it.
+
+## Every story is audited at two viewports
+
+`browser.instances` declares **two** Chromium instances, each carrying its own `viewport`:
+
+| instance            | viewport | what it covers                                                                        |
+| ------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `storybook-mobile`  | 414x896  | Vitest browser mode's own default — the collapsed/responsive rendering.               |
+| `storybook-desktop` | 1280x720 | Playwright's default — wide DataTable headers, multi-column layouts, full Pagination. |
+
+axe measures the DOM **as rendered**, so a single viewport only ever audits one side of every `md:`/`lg:` breakpoint: whatever the active width hides is not passing, it is _unreachable_. Until this landed the project ran at the 414x896 default only, so the design system's entire desktop rendering had never been audited. Neither width is a baseline on its own.
+
+**This is why the reported test count is 2x the number of stories.** If it ever stops being 2x, an instance silently stopped running — investigate rather than accepting the green.
+
+Both instances need an explicit `name`. Two unqualified `{ browser: 'chromium' }` entries collide with `project name "storybook (chromium)" already defined` (storybookjs/storybook#32427).
+
+**The viewport matrix does not touch visual regression.** That job runs from `playwright.config.ts` via `e2e.yml` against the committed `*-chromium-linux` baselines and shares no config with the `storybook` Vitest project. Changing viewports here cannot invalidate a baseline there.

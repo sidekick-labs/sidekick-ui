@@ -13,6 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Mint an installation token from the sidekick-labs-bot GitHub App.
+      # Releases created with this token (unlike the default GITHUB_TOKEN) DO
+      # trigger downstream workflows — so creating the Release fires publish.yml.
+      # GitHub deliberately suppresses workflow triggers for events created by
+      # GITHUB_TOKEN, which is why v0.7.1 and v0.8.0 both had to be published
+      # by a manual `workflow_dispatch`.
+      - name: Generate release-bot token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.SIDEKICK_RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.SIDEKICK_RELEASE_BOT_PRIVATE_KEY }}
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js
@@ -57,7 +70,7 @@ jobs:
 
       - name: Create GitHub Release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_NOTES: ${{ steps.changelog.outputs.notes }}
         run: |
           printf "%s" "$RELEASE_NOTES" > /tmp/release_notes.txt

@@ -10,6 +10,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'vitest.config.ts'
       - 'tsconfig.json'
       - '.github/workflows/e2e.yml'
   push:
@@ -22,6 +23,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'vitest.config.ts'
       - 'tsconfig.json'
       - '.github/workflows/e2e.yml'
 
@@ -84,7 +86,7 @@ jobs:
           retention-days: 7
 
   a11y:
-    name: Storybook a11y gate (axe)
+    name: Storybook story tests (render + interaction + a11y)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -121,13 +123,14 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
-      # Build the static Storybook, then serve it and run the test-runner. The
-      # gate renders every story (render-smoke) and runs axe on each: violations
-      # with impact serious/critical FAIL CI; moderate/minor are logged only.
-      # See .storybook/test-runner.ts for the policy. This is a sibling to the
+      # `@storybook/addon-vitest` mounts every story in headless Chromium
+      # (Vitest browser mode), runs each story's `play` function, and enforces
+      # the addon-a11y axe check — `parameters.a11y.test = 'error'` in
+      # .storybook/preview.tsx fails on ANY violation. Vitest spawns Storybook
+      # itself, so no build+serve step is needed. This is a sibling to the
       # visual-regression job above and does not touch its snapshots.
-      - name: Build Storybook
-        run: npm run build-storybook
+      - name: Run Storybook story tests
+        run: npm run test:storybook
 
-      - name: Run Storybook a11y gate
-        run: npm run test-storybook:ci
+      - name: Verify Storybook builds
+        run: npm run build-storybook

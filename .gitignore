@@ -5,5 +5,10 @@ coverage/
 .vite/
 storybook-static/
 
+# Playwright run artifacts (the visual-regression BASELINES under
+# e2e/**-snapshots/ are committed — these are not).
+test-results/
+playwright-report/
+
 # Git worktrees
 .worktrees/

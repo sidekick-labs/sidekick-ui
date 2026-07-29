@@ -1,0 +1,81 @@
+name: Publish Storybook
+
+# Publishes the built Storybook to GitHub Pages so consuming apps
+# (sidekick-web, sidekick-harness) can compose it via `refs` in their own
+# .storybook/main.ts without cloning this repo.
+#
+# Deliberately a SEPARATE workflow from ci.yml, triggered only on push to main:
+#   * it never reports a status check on a pull request, so it can never become
+#     (or be mistaken for) a required check, and
+#   * it does not touch `Storybook story tests (render + interaction + a11y)`
+#     in ci.yml (a required check context, name must stay byte-identical) or the
+#     visual-regression job in e2e.yml and its *-chromium-linux baselines.
+#
+# Published on every merge to main (not only on release) so the composed
+# catalog always matches what consumers see on their own main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel an in-flight Pages deployment — a cancelled deploy can leave the
+# site serving a half-uploaded artifact. Queue instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Storybook
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: storybook-static
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

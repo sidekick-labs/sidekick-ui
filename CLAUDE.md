@@ -50,12 +50,13 @@ src/
 └── index.ts             # Package entry point (barrel export)
 ```
 
-**Build output:** `dist/` contains the ESM bundle (`index.js`), type declarations (`index.d.ts`), and compiled CSS (`styles/index.css`).
+**Build output:** `dist/` contains the ESM bundle (`index.js`), type declarations (`index.d.ts`), compiled CSS (`styles/index.css`), and the raw design tokens (`styles/theme.css`, copied verbatim from source by `scripts/copy-theme.mjs` — deliberately NOT run through Tailwind).
 
 **Package exports:**
 
 - `@sidekick-labs/ui` — components, hooks, and utilities
-- `@sidekick-labs/ui/styles` — compiled Tailwind CSS theme
+- `@sidekick-labs/ui/styles` — the **fully compiled** Tailwind stylesheet (~56KB: preflight, `@property` rules, utilities). For a consumer that has **no** Tailwind of its own.
+- `@sidekick-labs/ui/theme` — the **raw** `@theme` tokens + `[data-theme='light']` overrides, uncompiled. For a consumer that runs **its own** Tailwind: `@import 'tailwindcss'; @import '@sidekick-labs/ui/theme';` yields one Tailwind, one preflight, and tokens shared by reference instead of copy-paste. Both consuming apps use this one. Keep it out of the Tailwind pipeline — if it were compiled, consumers could no longer compose or tree-shake it (`scripts/copy-theme.mjs` guards this).
 
 **Consumers:** sidekick-web (Rails + Inertia.js), sidekick-harness (Fastify + Inertia.js).
 

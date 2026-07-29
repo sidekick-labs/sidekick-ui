@@ -125,7 +125,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepublishOnly": "npm run build",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6011",
     "build-storybook": "storybook build"
   }
 }

@@ -63,6 +63,21 @@ export default tseslint.config(
     },
   },
 
+  // Build scripts run in Node, not the browser: they need Node globals, and
+  // logging to stdout is their whole job (the build reads their output).
+  {
+    files: ['scripts/**/*.{mjs,js}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   // Test files specific configuration
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],

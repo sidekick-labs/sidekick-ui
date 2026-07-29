@@ -34,8 +34,17 @@
   --color-danger-hover: #b91c1c;
   --color-danger-foreground: #ffffff;
 
+  /* No `--color-warning-hover` here on purpose. Nothing in this library or in
+     either consuming app references it — unlike every other `-hover` token,
+     which components do use (e.g. Button's accent hover). An unreferenced
+     `@theme` token is TREE-SHAKEN by Tailwind v4, while the plain
+     `[data-theme='light']` selector below is not, so it used to ship a light
+     override with NO dark base: in dark it resolved to nothing and computed
+     `rgb(0, 0, 0)`. Dormant only because nothing calls it. Removed rather than
+     given a base value, per this repo's own rule — "if a token has no consumer
+     yet, don't add it" (CLAUDE.md, theme/token sweep). Re-add BOTH halves when
+     a real hover state needs it. */
   --color-warning: #f59e0b;
-  --color-warning-hover: #d97706;
   --color-warning-foreground: #000000;
 
   --color-muted: #262626;
@@ -111,7 +120,6 @@
   /* White on #d97706 was 3.18:1; Badge labels are 12px, so the 4.5:1 body-text
      bar applies. #b45309 gives 5.02:1. */
   --color-warning-light: #b45309;
-  --color-warning-hover-light: #92400e;
   --color-warning-foreground-light: #ffffff;
 
   --color-muted-light: #f5f5f5;
@@ -187,7 +195,6 @@
   --color-danger-foreground: var(--color-danger-foreground-light);
 
   --color-warning: var(--color-warning-light);
-  --color-warning-hover: var(--color-warning-hover-light);
   --color-warning-foreground: var(--color-warning-foreground-light);
 
   --color-muted: var(--color-muted-light);

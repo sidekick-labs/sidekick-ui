@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-29
+
+### Added
+
+- **CONSUMER-AFFECTING — a `./theme` export: the raw design tokens, importable without the compiled bundle.** Until now the package exported only `"."` and `"./styles"`, and `./styles` is `dist/styles/index.css` — **56,233 bytes of fully-compiled Tailwind v4 output** (44 `@property` rules, a 10.9 KB `@layer base` preflight, 35.3 KB of `@layer utilities`). That artifact is right for a consumer with no Tailwind of its own, but for one that compiles its own it stacks a second Tailwind and a duplicate preflight on top. There was no third option, because `files: ["dist"]` meant the raw `src/styles/theme.css` was never published at all — so the only way to get these tokens into an app that already runs Tailwind was to **copy** them by hand. Both consuming apps did exactly that, and the copies then had to be re-synced manually (every "Re-synced VERBATIM from @sidekick-labs/ui 0.9.0" comment in their `application.css` is one of those hand-copies).
+
+  A consumer with its own Tailwind can now do:
+
+  ```css
+  @import 'tailwindcss';
+  @import '@sidekick-labs/ui/theme';
+  ```
+
+  and get the `@theme` block plus the `[data-theme='light']` overrides only — one Tailwind, one preflight, tokens shared **by reference** instead of by copy-paste.
+
+  Measured against sidekick-web's real entry, compiled unminified with `@tailwindcss/cli@4` and scanning the app's actual `app/frontend` tree:
+
+  | variant                                                | raw                  | gzip                  |
+  | ------------------------------------------------------ | -------------------- | --------------------- |
+  | current (tokens hand-copied into the app)              | 118,928              | 16,897                |
+  | `@import '@sidekick-labs/ui/styles'` (compiled bundle) | 183,677 (**+54.4%**) | 26,937 (**+10.0 KB**) |
+  | `@import '@sidekick-labs/ui/theme'` (raw tokens)       | 119,038 (**+110 B**) | 16,876 (**−21 B**)    |
+
+  So the theme import is **size-neutral** — it replaces a hand-maintained copy of the same tokens with a shared one — while importing the compiled stylesheet would cost half again as much CSS. (The `/styles` row also shows _why_ it is not a workaround: it emits every token **twice**, once from ui and once from the app, with the app's stale copy winning the cascade. It duplicates the bundle without fixing the drift.)
+
+  `dist/styles/theme.css` is produced by `scripts/copy-theme.mjs`, a plain post-build **copy** — deliberately NOT routed through the Tailwind pipeline, so it stays an uncompiled `@theme` block that consumers' own Tailwind can compose and tree-shake. The script asserts the output is byte-identical to source, carries both `@theme` and `[data-theme='light']`, and shows no sign of compilation; `publish.yml` re-checks all of that against the built artifact and asserts the file is actually in the packed tarball. Minor, not patch: this is new public export surface.
+
+### Fixed
+
+- **`--color-warning-hover` removed — it shipped a light override with no dark base.** Found by inspecting built output rather than source. Tailwind v4 tree-shakes `@theme` variables nothing references, but the plain `[data-theme='light']` selector below is not pruned — so this token compiled to a light-theme value and **no dark default**, resolving to nothing and computing `rgb(0, 0, 0)` in dark. An empirical sweep of a consumer's built CSS found 37 tokens declared in the light block and **exactly one** without a base: this one, so it is a genuine one-off rather than a systemic hole.
+
+  It was dormant only because **nothing referenced it** — no `var(--color-warning-hover)` and no `bg-warning-hover`-style utility, in this library or in either consuming app (every other `-hover` token _is_ used, e.g. Button's accent hover). **Removed rather than given a base value**, per this repo's own rule: _"if a token has no consumer yet, don't add it"_ (CLAUDE.md, theme/token sweep). `--color-warning-hover-light` and the light mapping go with it. Re-add both halves when a real hover state needs it.
+
 ### Security
 
 - **4 HIGH `brace-expansion` DoS advisories resolved without the breaking major ([GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg)).** `npm audit` proposed `vite-plugin-dts@5` (`isSemVerMajor: true`) — the exact bump that made API Extractor emit an empty `export {}` stub and left v0.7.0 tagged but never published (#122). Instead the fix lands at the leaf, via a scoped `overrides` entry pinning `@vue/language-core`'s `minimatch` to `^10.2.5`, which drops the last vulnerable copy (`brace-expansion@2.1.2`) in favour of the already-hoisted `5.0.8`. Dev-only dependency chain (`brace-expansion` → `minimatch` → `@vue/language-core` → `vite-plugin-dts`); no runtime, bundle, or consumer impact. `npm audit`: 4 high → **0**.

@@ -6,6 +6,25 @@
 @import './theme.css';
 @import './animations.css';
 
+/* Keep the accent ink's DARK base in this compiled bundle.
+ *
+ * Tailwind v4 tree-shakes `@theme` variables that nothing in this library
+ * references, but the plain `[data-theme='light']` selector in theme.css is
+ * never pruned. A token no component here reads therefore compiles into
+ * dist/styles/index.css as a light override with NO base — resolving to
+ * nothing in dark and computing rgb(0, 0, 0). That is the exact shape of the
+ * dead `-hover` token v0.10.0 removed, and the source file makes it look
+ * correct.
+ *
+ * The accent ink is defined FOR CONSUMERS (sidekick-web's batch security-key
+ * pills); every other ink token survives only incidentally, because a
+ * component here happens to write `text-[var(--color-…-text)]` and the literal
+ * string counts as a reference. Safelisting the utility makes that survival
+ * explicit rather than incidental, and hands `./styles` consumers the same
+ * `text-*` utility the other ink tokens already get for free. `./theme` is
+ * unaffected either way — it is a verbatim copy of the source. */
+@source inline("text-accent-text");
+
 @layer base {
   html {
     @apply antialiased;

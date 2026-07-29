@@ -62,6 +62,17 @@
      they are too dark to double as foreground text on a near-black surface. These
      `-text` variants are tuned to clear WCAG AA (>=4.5:1) as text on the darkest
      surfaces in use (#0a0a0a / #151515). Components render colored text via these. */
+
+  /* The cyan accent as ink. A no-op in dark, deliberately: the accent FILL is
+     the one semantic fill on this side of the theme that is already tuned to
+     carry BLACK text on it (`--color-accent-foreground: #000000`), which makes
+     it bright enough to double as ink on a near-black canvas — the same reason
+     success and warning repeat their fills below. Measured on every surface it
+     lands on: 8.65:1 on #000000, 8.15:1 on #0a0a0a, 7.52:1 on #151515, and on
+     the 10%-accent tint those surfaces produce (#011215 / #0a1b1e / #142528)
+     7.87:1, 7.28:1 and 6.53:1. Light is where the fill genuinely fails — see
+     the ink value in the light block. */
+  --color-accent-text: #06b6d4;
   --color-info-text: #60a5fa;
   --color-success-text: #22c55e;
   --color-warning-text: #f59e0b;
@@ -139,6 +150,18 @@
      nowhere, and failing by a rounding width. Each is taken one Tailwind step
      darker so the margin is real rather than marginal (5.8-6.2:1 on the tints,
      6.3-7.1:1 on white). Danger already cleared at 5.54:1 and is unchanged. */
+  /* The accent ink on light surfaces, and the reason this whole pair exists.
+     `--color-accent-light` (#0e7490) is tuned to carry WHITE text on it as a
+     fill (5.36:1), but read as text against the page it is a different pair
+     entirely: 4.67:1 on #ffffff, and only 4.49:1 on its own 10% tint over
+     #fafafa (#e2edef) and 4.30:1 over #f5f5f5 (#dee8eb) — under the bar, and
+     under it by a rounding width rather than obviously. The fill is NOT
+     retuned; it works as a fill. One Tailwind step darker (cyan-800) is the
+     same recipe the info/success/warning inks above use, and clears with room:
+     7.27:1 on #ffffff, 6.96:1 on #fafafa, 6.67:1 on #f5f5f5, and 6.33:1 /
+     6.09:1 / 5.83:1 on the three accent tints. (It coincides with
+     `--color-accent-hover-light`; same value, unrelated role.) */
+  --color-accent-text-light: #155e75;
   --color-info-text-light: #1d4ed8;
   --color-success-text-light: #166534;
   --color-warning-text-light: #92400e;
@@ -205,6 +228,7 @@
   --color-text-secondary: var(--color-text-secondary-light);
   --color-text-muted: var(--color-text-muted-light);
 
+  --color-accent-text: var(--color-accent-text-light);
   --color-info-text: var(--color-info-text-light);
   --color-success-text: var(--color-success-text-light);
   --color-warning-text: var(--color-warning-text-light);

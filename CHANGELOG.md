@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-29
+
+### Added
+
+- **CONSUMER-AFFECTING — `--color-accent-text`, the one missing ink in the set.** The theme has shipped `-text` ink siblings for primary, info, success, warning and danger; accent was the single hole, and a real consumer had already fallen into it. `sidekick-web`'s `BatchSecurityKeysCard` renders three key pills in the same recipe — an ink token on that colour's own 10% tint. Two of them name a token (`--color-primary-text` on `--color-primary/10`, `--color-info-text` on `--color-info/10`). The third had nothing to name, so it fell back to the accent **fill** and measured **4.48:1** on its own light tint — under the 4.5:1 body-text bar, and under it by a rounding width rather than obviously. With no ink token to reach for, that call site had to hard-code the cyan ramp through the app's own `light:` variant instead of the estate pattern (sidekick-labs/product-brain#300).
+
+  This is the failure mode the ink siblings exist for: **a fill is tuned to carry its `-foreground` ink _on_ it; read as text against the page it is a completely different pair.** `--color-accent-light` (#0e7490) carries white at 5.36:1 as a fill — and lands at 4.67:1 on white, 4.49:1 on its own tint over `--color-surface`, 4.30:1 over `--color-muted` as text. The fix is a sibling, never a retune of the fill; retuning would break the fill's own `-foreground` pairing to rescue a role it was never tuned for.
+
+  | theme | value     | on background    | on surface       | on surface-hover | on the accent 10% tint over those three |
+  | ----- | --------- | ---------------- | ---------------- | ---------------- | --------------------------------------- |
+  | dark  | `#06b6d4` | 8.65:1 (#000000) | 8.15:1 (#0a0a0a) | 7.52:1 (#151515) | 7.87:1 / 7.28:1 / **6.53:1**            |
+  | light | `#155e75` | 7.27:1 (#ffffff) | 6.96:1 (#fafafa) | 6.67:1 (#f5f5f5) | 6.33:1 / 6.09:1 / **5.83:1**            |
+
+  **Dark is a deliberate no-op** — the accent fill is repeated verbatim. It is one of the fills tuned to carry _black_ text (`--color-accent-foreground: #000000`), which makes it bright enough to double as ink on a near-black canvas; success and warning repeat their fills for exactly the same reason, while info and danger (white-foreground, hence dark) do not. **Light takes it one Tailwind step darker** (cyan-700 → cyan-800), the same recipe the info/success/warning light inks already use, so the margin is real rather than marginal. Minor, not patch: a new public token in a published theme is observable consumer output.
+
+  This repo's own rule is _"if a token has no consumer yet, don't add it"_ (CLAUDE.md, theme/token sweep). This is a **documented exception, not an oversight**: the consumer already exists and is presently working around the absence, and the paired `sidekick-web` change collapses that workaround onto the token.
+
+### Fixed
+
+- **The new token would have shipped base-less in `dist/styles/index.css`, and does not.** Tailwind v4 tree-shakes `@theme` variables nothing in this library references, while the plain `[data-theme='light']` block below is never pruned — so a consumer-only token compiles into the bundle as a light override with **no dark base**, resolving to nothing and computing `rgb(0, 0, 0)`. That is precisely the shape of the dead `-hover` token 0.10.0 removed, and the first build of this change reproduced it exactly. Every other ink token survives only _incidentally_, because some component here happens to write `text-[var(--color-…-text)]` and Tailwind counts the literal string as a reference.
+
+  `src/styles/index.css` now safelists the reading utility (`@source inline("text-accent-text")`), which makes that survival explicit rather than incidental and additionally hands `./styles` consumers the same `text-*` utility the other ink tokens already get for free. Verified in **built output, not source**: `dist/styles/index.css` carries both `--color-accent-text:#06b6d4` and the `[data-theme='light']` override, and a sweep of every `--color-*` name in the bundle finds **zero** tokens left with a light value and no base. `./theme` is unaffected either way — `dist/styles/theme.css` is a verbatim copy of the source and always carried both halves.
+
 ## [0.10.1] - 2026-07-29
 
 ### Fixed
@@ -253,7 +276,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Packages publishing as `@sidekick-labs/ui` (#11)
 - GitHub Actions CI and publish workflows
 
-[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.6.1...v0.7.1

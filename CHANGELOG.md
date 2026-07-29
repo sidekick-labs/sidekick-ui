@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **4 HIGH `brace-expansion` DoS advisories resolved without the breaking major ([GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg)).** `npm audit` proposed `vite-plugin-dts@5` (`isSemVerMajor: true`) — the exact bump that made API Extractor emit an empty `export {}` stub and left v0.7.0 tagged but never published (#122). Instead the fix lands at the leaf, via a scoped `overrides` entry pinning `@vue/language-core`'s `minimatch` to `^10.2.5`, which drops the last vulnerable copy (`brace-expansion@2.1.2`) in favour of the already-hoisted `5.0.8`. Dev-only dependency chain (`brace-expansion` → `minimatch` → `@vue/language-core` → `vite-plugin-dts`); no runtime, bundle, or consumer impact. `npm audit`: 4 high → **0**.
+
 ## [0.9.0] - 2026-07-28
 
 ### Added

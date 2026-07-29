@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-07-29
+
+### Fixed
+
+- **`JsonEditor`'s schema-hints panel referenced a colour token that nothing has ever defined**, so it rendered with no background at all. Because `dist/index.js` shipped that reference, the dangling name leaked into _both_ consuming apps' built CSS — neither ui's own theme nor either app defined it, and an empirical sweep of the built stylesheets found it was the only unresolved `--color-*` left in all three repos.
+
+  An unset custom property computes to nothing rather than erroring, so the panel simply inherited whatever was behind it — in practice `--color-background`, the exact colour of the `<textarea>` directly above it. The panel was therefore indistinguishable from the field it annotates, delineated only by its border. Quiet, but not what the markup asked for.
+
+  Mapped onto **`--color-surface`** rather than minting the missing token. `--color-surface` is already the system's name for that role — one step up from `--color-background` — and this is the same nested-panel recipe (`bg-[var(--color-surface)] border border-[var(--color-border)]`) used elsewhere in the library. Adding a second name for an existing role would have reintroduced precisely the token duplication that 0.10.0's `./theme` export removed. `--color-muted` (#262626) was considered and rejected: the `-text` tokens rendered inside the panel are tuned against the #0a0a0a / #151515 surfaces, not #262626.
+
+  Measured in the browser, both themes: the panel goes from transparent to `#0a0a0a` (dark) / `#fafafa` (light). Text inside now sits at 7.16–16.37:1 in dark and 5.59–6.41:1 in light — comfortably over the 4.5:1 body-text bar on the actual panel background rather than on white.
+
+  **Consumers pick this up on a version bump.** Both apps also carried their own copies of the same dangling reference; those are fixed in the apps directly.
+
 ## [0.10.0] - 2026-07-29
 
 ### Added

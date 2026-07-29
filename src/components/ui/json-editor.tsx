@@ -235,7 +235,18 @@ const JsonEditor = React.forwardRef<HTMLTextAreaElement, JsonEditorProps>(
             <summary className="cursor-pointer text-[var(--color-text-muted)] hover:text-[var(--color-text)] select-none">
               Expected properties
             </summary>
-            <div className="mt-2 p-3 rounded-lg bg-[var(--color-background-secondary)] border border-[var(--color-border)]">
+            {/* Was a "background secondary" token that nothing ever defined, so this
+                panel rendered transparent — indistinguishable from the textarea above
+                it, with only the border to delineate it. `--color-surface` is the
+                system's existing name for exactly that role (one step up from
+                `--color-background`, which the textarea uses), so this maps onto it
+                rather than minting a synonym and reintroducing the token duplication
+                the ./theme export just removed. `--color-muted` was rejected: the
+                `-text` tokens rendered inside here are tuned against the #0a0a0a /
+                #151515 surfaces, not #262626.
+                NB: don't write the old token's name in this comment — Tailwind scans
+                comment text too, and it would keep the dead name in the built CSS. */}
+            <div className="mt-2 p-3 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]">
               <ul className="space-y-1.5">
                 {schemaHints.map((hint) => (
                   <li key={hint.name} className="flex items-start gap-2">

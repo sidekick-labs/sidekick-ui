@@ -3,6 +3,33 @@
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/forms";
 
+/* The engine behind the Radix overlays' entry/exit motion.
+ *
+ * `dialog`, `alert-dialog`, `dropdown-menu`, `popover` and `tooltip` have always
+ * carried `animate-in` / `fade-in-0` / `zoom-in-95` / `slide-in-from-*` and the
+ * matching `animate-out` classes, but no plugin defining those utilities was
+ * ever installed — so they compiled to NOTHING. Verified against a pre-change
+ * build: `dist/styles/index.css` contained no `.animate-in` rule at all, and
+ * every consumer of `./styles` received dead class names on un-animated
+ * overlays. The classes were written for this library; the library was missing.
+ *
+ * `tw-animate-css`, not `tailwindcss-animate`: the latter is a v3-era JS plugin
+ * built on `matchUtilities` and a `theme.extend` config, and this package is on
+ * Tailwind v4 with no JS config. `tw-animate-css` is the v4-native successor and
+ * defines every class in use here, including the `1/2` ratio and `[48%]`
+ * arbitrary forms the dialogs rely on. It is also what `sidekick-web` already
+ * imports (same `^1.4.0`), so the design system and its main consumer now
+ * resolve these utilities through one implementation instead of the consumer
+ * accidentally covering for the package.
+ *
+ * Imported BEFORE `./theme.css` on purpose. `tw-animate-css` ships its own
+ * `--animate-accordion-down` / `--animate-accordion-up` in an `@theme inline`
+ * block; this library defines both itself, against its own `@keyframes` in
+ * `animations.css`. Later definitions win, so the local tokens stay
+ * authoritative — reordering these two imports silently hands the accordion's
+ * motion to the vendor. */
+@import 'tw-animate-css';
+
 @import './theme.css';
 @import './animations.css';
 

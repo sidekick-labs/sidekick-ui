@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { CSSProperties } from 'react'
 import { expect } from 'storybook/test'
 
 /**
@@ -114,12 +115,10 @@ export const AuditsBothThemes: StoryObj<typeof AuditMatrix> = {
  * `./theme` export. A bespoke animation here would let the tripwire keep passing
  * after a Tailwind or token change moved the mechanism out from under it.
  *
- * Note what it is NOT: the `animate-in` / `fade-in-0` / `zoom-in-95` /
- * `slide-in-from-*` classes on the Radix wrappers (dialog, dropdown-menu,
- * popover, tooltip, alert-dialog) are `tailwindcss-animate` / `tw-animate-css`
- * utilities and this repo installs NEITHER plugin, so they compile to nothing —
- * verified against `dist/styles/index.css`, which contains no `.animate-in` rule
- * at all. Probing those would assert on dead classes and pass unconditionally.
+ * This covers the `@theme`-token half of the library's entry motion. The Radix
+ * overlays run on a different engine and are covered separately by
+ * `OverlayMotionProbe` below — read that note before assuming they are
+ * redundant.
  *
  * Applied as an inline `animation: var(--animate-fade-in)` rather than through
  * the matching Tailwind utility, and that is REQUIRED, not a shortcut. Tailwind
@@ -155,6 +154,66 @@ function MotionProbe() {
 }
 
 /**
+ * The OVERLAY entry animation — the one the dialogs, menus, popovers and
+ * tooltips actually run.
+ *
+ * These are a second, independent engine. `MotionProbe` above rides
+ * `--animate-fade-in`, a `@theme` token this repo defines against its own
+ * `@keyframes fade-in`. The overlays instead carry `animate-in` / `fade-in-0` /
+ * `zoom-in-95` / `slide-in-from-*` utilities, which resolve through
+ * `tw-animate-css` to the vendor's `enter` keyframes driven by
+ * `--tw-enter-opacity` / `--tw-enter-scale` / `--tw-enter-translate-*`. Freezing
+ * one says nothing about the other, so both are probed.
+ *
+ * Historically this probe could not exist. No animation plugin was installed at
+ * all, so every one of those utilities compiled to nothing — the pre-fix
+ * `dist/styles/index.css` contained no `.animate-in` rule, and a probe on them
+ * would have asserted on dead classes and passed unconditionally. Installing
+ * `tw-animate-css` made the overlays animate for the first time, which is
+ * exactly what puts them in scope for the freeze.
+ *
+ * Written as an inline `animation: 'enter …'` with the enter custom properties
+ * set by hand, NOT as `className="animate-in fade-in-0 zoom-in-95"`, and that is
+ * REQUIRED. `src/styles/index.css` carries `@source not` for this file, so a
+ * utility class named here is never GENERATED. It would resolve today only
+ * because `tooltip.tsx` happens to use the same three bare — and would silently
+ * become inert the moment that changed, leaving a tripwire that passes
+ * unconditionally. `var(--animate-in)` is no better: `tw-animate-css` declares it
+ * in an `@theme inline` block, so it is substituted into the utility and never
+ * emitted as a variable. Verified against the built CSS — there is no
+ * `--animate-in:` declaration in `dist/styles/index.css`.
+ *
+ * What stays real is the part that matters: `@keyframes enter` and the
+ * `--tw-enter-*` registered properties both come from `tw-animate-css` itself,
+ * so if that import is dropped from `index.css` the animation stops resolving
+ * and the numbers below move.
+ *
+ * The values mirror the overlays' own: opacity 0 (`fade-in-0`), scale 95%
+ * (`zoom-in-95`), and a 2-spacing-unit vertical offset
+ * (`slide-in-from-top-2`). Colours pinned inline so the probe can never itself
+ * trip the contrast gate.
+ */
+function OverlayMotionProbe() {
+  return (
+    <output
+      data-testid="overlay-motion-probe"
+      style={
+        {
+          animation: 'enter 0.15s ease',
+          '--tw-enter-opacity': 0,
+          '--tw-enter-scale': '95%',
+          '--tw-enter-translate-y': 'calc(2 * var(--spacing) * -1)',
+          backgroundColor: '#ffffff',
+          color: '#000000',
+        } as CSSProperties
+      }
+    >
+      Overlay motion probe — the dialog/menu/popover/tooltip entry animation.
+    </output>
+  )
+}
+
+/**
  * The gate must sample SETTLED frames — this is what makes a green run mean
  * something.
  *
@@ -176,28 +235,61 @@ function MotionProbe() {
  * The tag existing proves nothing about whether its rule won the cascade;
  * opacity is the property axe actually consumes.
  *
- * Negative control: removing `withFrozenMotion` from the `decorators` array in
- * `.storybook/preview.tsx` must make this story fail. Verified by doing exactly
- * that — the unfrozen reading was **opacity 0 on all four instances**, not some
- * partial value. axe was sampling a fully invisible element, which is why the
- * result is a coin flip rather than a consistently wrong number: at opacity 0
- * there is no colour to measure, so whether a contrast violation is reported at
- * all depends on where the sample lands. If you change the freeze, re-run that
- * check; a tripwire that has never been seen to fail is not a tripwire.
+ * Negative control: with the freeze defeated, this story must fail — on BOTH
+ * probes. Re-verified when the overlay probe was added, by a throwaway story
+ * that beat the freeze on selector specificity (`[data-testid=…]` with
+ * `!important` outranks the decorator's `*`) and stretched the animations to
+ * 5s. That is a tighter control than deleting `withFrozenMotion`: it leaves the
+ * gate's own configuration untouched and isolates the two probes.
+ *
+ * Measured, unfrozen:
+ *
+ *   fade probe     opacity 0.00568443  duration 5s  transform matrix(1, 0, 0, 1, 0, -15.909)
+ *   overlay probe  opacity 0.0013869   duration 5s  transform matrix3d(scale 0.950069, translateY -7.9889)
+ *
+ * Every assertion below moves. Both elements are effectively invisible — which
+ * is why the result is a coin flip rather than a consistently wrong number: at
+ * ~0 opacity there is barely any colour to measure, so whether a contrast
+ * violation gets reported at all depends on where the sample lands. The overlay
+ * probe additionally reads mid-zoom and mid-slide, so its POSITION is wrong too.
+ *
+ * If you change the freeze, re-run that check; a tripwire that has never been
+ * seen to fail is not a tripwire.
+ *
+ * One latent dependency in the `transform` assertion, called out because it
+ * would fail SILENTLY: it expects `none`, which holds only under the default
+ * `animation-fill-mode: none` — properties revert to base style once the
+ * animation ends, and neither probe declares a `transform` of its own. The
+ * freeze does not touch fill-mode. Give either animation `forwards` and the
+ * settled reading becomes the keyframe's own value (`matrix(1, 0, 0, 1, 0, 0)`
+ * for the fade probe's `translateY(0)`), so the assertion starts failing on a
+ * correctly-frozen element. Relax it to accept the identity matrix then —
+ * do not drop it.
  */
 export const FreezesEntryAnimations: StoryObj<typeof AuditMatrix> = {
-  render: () => <MotionProbe />,
+  render: () => (
+    <>
+      <MotionProbe />
+      <OverlayMotionProbe />
+    </>
+  ),
   play: async ({ canvas }) => {
-    const probe = canvas.getByTestId('motion-probe')
-    const computed = getComputedStyle(probe)
+    for (const testId of ['motion-probe', 'overlay-motion-probe']) {
+      const computed = getComputedStyle(canvas.getByTestId(testId))
 
-    // The frame axe would measure. Anything below 1 is a frame no user settles
-    // on, and a contrast reading taken from it is meaningless.
-    await expect(computed.opacity).toBe('1')
+      // The frame axe would measure. Anything below 1 is a frame no user settles
+      // on, and a contrast reading taken from it is meaningless.
+      await expect(computed.opacity, `${testId} opacity`).toBe('1')
 
-    // Belt and braces on the mechanism itself: a 0.3s animation still declared
-    // as running would drift back to flaky even if this particular sample
-    // happened to land at full opacity.
-    await expect(computed.animationDuration).toBe('0.001s')
+      // Belt and braces on the mechanism itself: an animation still declared as
+      // running at its authored duration would drift back to flaky even if this
+      // particular sample happened to land at full opacity.
+      await expect(computed.animationDuration, `${testId} duration`).toBe('0.001s')
+
+      // The overlays translate and scale as well as fade, and axe reads position
+      // too. A settled overlay sits at its final transform; mid-animation it is
+      // offset and shrunk, which is a different element from the one that ships.
+      await expect(computed.transform, `${testId} transform`).toBe('none')
+    }
   },
 }

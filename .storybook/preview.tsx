@@ -1,9 +1,65 @@
-import type { Preview } from '@storybook/react-vite'
+import type { Decorator, Preview } from '@storybook/react-vite'
 import { useEffect } from 'react'
 // Load the full stylesheet (Tailwind + theme tokens + base layer + animations).
 // Importing only theme.css gives CSS variables but no utility classes, so
 // stories render without Tailwind styling.
 import '../src/styles/index.css'
+
+/**
+ * Freeze animations and transitions — for the TEST RUNNER ONLY.
+ *
+ * axe measures COMPUTED style. An element that is fading, sliding or pulsing is,
+ * for the length of that animation, a different element than the one that
+ * ships: partly transparent, partly offset, composited against whatever is
+ * behind it. A contrast reading taken mid-animation is therefore a reading of a
+ * frame no user settles on, and it is a different number on every run.
+ *
+ * The failure mode this prevents was observed on `fundbright-web`: an entry-
+ * animated banner carried a deterministic 2.17:1 contrast failure that the gate
+ * FAILED on one PR and PASSED on `main` with byte-identical code, so a real
+ * violation reached production through a green pipeline. A green run has to mean
+ * "no violations", never "axe happened not to see them this time".
+ *
+ * `1ms` rather than `none`, deliberately: `animation: none` can leave an element
+ * at its PRE-animation base state, which for an entry animation is the invisible
+ * one — trading a random frame for a guaranteed-wrong frame. Running the
+ * animation to completion in 1ms with a negative delay lands every element on
+ * its FINAL frame instead, which is the state that ships.
+ *
+ * Gated on the runner so interactive Storybook keeps its animations. That
+ * matters more here than in an app repo: this Storybook is the published,
+ * browsable catalog for `@sidekick-labs/ui`, and motion is a design property
+ * reviewers are supposed to see. Only the gate needs a still frame.
+ * `__vitest_worker__` is the same discriminator the audit-matrix tripwire uses
+ * to read its instance name.
+ *
+ * This is test-surface only — `.storybook/` is not part of the published
+ * package, so no consumer inherits it.
+ *
+ * The freeze fails SILENTLY if it stops applying: stories just go back to being
+ * flaky, which reads as ordinary CI noise and gets retried rather than
+ * investigated. `FreezesEntryAnimations` in `src/test/audit-matrix.stories.tsx`
+ * asserts it is live.
+ */
+const FROZEN_MOTION_STYLE_ID = 'sb-frozen-motion'
+
+const withFrozenMotion: Decorator = (Story) => {
+  const underTestRunner = '__vitest_worker__' in globalThis
+  if (underTestRunner && !document.getElementById(FROZEN_MOTION_STYLE_ID)) {
+    const style = document.createElement('style')
+    style.id = FROZEN_MOTION_STYLE_ID
+    style.textContent = `*, *::before, *::after {
+      animation-delay: -1ms !important;
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-delay: -1ms !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }`
+    document.head.appendChild(style)
+  }
+  return <Story />
+}
 
 const preview: Preview = {
   tags: ['autodocs'],
@@ -72,6 +128,7 @@ const preview: Preview = {
         </div>
       )
     },
+    withFrozenMotion,
   ],
   parameters: {
     layout: 'centered',

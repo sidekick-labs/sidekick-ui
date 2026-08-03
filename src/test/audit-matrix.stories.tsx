@@ -30,6 +30,10 @@ import { expect } from 'storybook/test'
  * part of the setup a fallback cannot fake: an instance called
  * `storybook-mobile-light` that renders 1280px wide in dark is, by definition,
  * not doing its job.
+ *
+ * `FreezesEntryAnimations` covers a third property of the gate that is not about
+ * coverage but about determinism: whether the frame axe samples is the settled
+ * one. It fails silently in the same way, so it lives here.
  */
 const AuditMatrix = () => (
   <p>
@@ -97,5 +101,103 @@ export const AuditsBothThemes: StoryObj<typeof AuditMatrix> = {
       .getPropertyValue('--color-primary-text')
       .trim()
     await expect(primaryText).toBe(theme === 'light' ? '#497000' : '#b7ff31')
+  },
+}
+
+/**
+ * Carries this library's REAL entry animation, not a hand-written `@keyframes`.
+ *
+ * `--animate-fade-in` in `theme.css` resolves to the `fade-in` keyframes in
+ * `animations.css` (`opacity: 0` + `translateY(-1rem)` -> `opacity: 1`). It is
+ * the mechanism the package actually ships for entry motion — sidekick-web's
+ * `FlashMessages` drives its flash banners off exactly this token, via the
+ * `./theme` export. A bespoke animation here would let the tripwire keep passing
+ * after a Tailwind or token change moved the mechanism out from under it.
+ *
+ * Note what it is NOT: the `animate-in` / `fade-in-0` / `zoom-in-95` /
+ * `slide-in-from-*` classes on the Radix wrappers (dialog, dropdown-menu,
+ * popover, tooltip, alert-dialog) are `tailwindcss-animate` / `tw-animate-css`
+ * utilities and this repo installs NEITHER plugin, so they compile to nothing —
+ * verified against `dist/styles/index.css`, which contains no `.animate-in` rule
+ * at all. Probing those would assert on dead classes and pass unconditionally.
+ *
+ * Applied as an inline `animation: var(--animate-fade-in)` rather than through
+ * the matching Tailwind utility, and that is REQUIRED, not a shortcut. Tailwind
+ * v4's automatic source detection scans this file as raw text, and
+ * `vite.config.ts` compiles `src/styles/index.css` into the PUBLISHED
+ * `dist/styles/index.css` — so naming that utility here, even inside a comment,
+ * emitted a rule for it into the shipped bundle. `index.css` therefore excludes
+ * this file from source detection, which means a utility class written here
+ * would never be GENERATED: the probe would silently lose its animation and this
+ * tripwire would pass unconditionally. Read the `@source not` note in
+ * `src/styles/index.css` before changing either half.
+ *
+ * The token and the keyframes are the parts that have to stay real, and both do:
+ * `--animate-fade-in` from `theme.css`, `@keyframes fade-in` from
+ * `animations.css`.
+ *
+ * Colours are pinned inline so the probe can never itself trip the contrast
+ * gate, in either theme.
+ */
+function MotionProbe() {
+  return (
+    <output
+      data-testid="motion-probe"
+      style={{
+        animation: 'var(--animate-fade-in)',
+        backgroundColor: '#ffffff',
+        color: '#000000',
+      }}
+    >
+      Motion probe — asserts the gate samples settled frames, not mid-animation ones.
+    </output>
+  )
+}
+
+/**
+ * The gate must sample SETTLED frames — this is what makes a green run mean
+ * something.
+ *
+ * axe reads computed style. While an element is fading or sliding in it is
+ * partly transparent and partly offset, so its contrast is a different number
+ * than the one that ships — and a different number on each run, depending on
+ * where the sample lands in the animation. On `fundbright-web` that produced the
+ * worst possible outcome: an entry-animated banner's 2.17:1 button FAILED the
+ * gate on one PR and PASSED on `main` with byte-identical code, so a real
+ * violation reached production through a green pipeline.
+ *
+ * `.storybook/preview.tsx` fixes this by collapsing every animation and
+ * transition to 1ms with a negative delay under the test runner, landing each
+ * element on its final frame. This story asserts that freeze is actually in
+ * effect, because if it silently stops applying the symptom is not a failure —
+ * it is a return to intermittent flakiness, which reads as ordinary CI noise.
+ *
+ * The assertion is on RENDERED OPACITY, not on the presence of the style tag.
+ * The tag existing proves nothing about whether its rule won the cascade;
+ * opacity is the property axe actually consumes.
+ *
+ * Negative control: removing `withFrozenMotion` from the `decorators` array in
+ * `.storybook/preview.tsx` must make this story fail. Verified by doing exactly
+ * that — the unfrozen reading was **opacity 0 on all four instances**, not some
+ * partial value. axe was sampling a fully invisible element, which is why the
+ * result is a coin flip rather than a consistently wrong number: at opacity 0
+ * there is no colour to measure, so whether a contrast violation is reported at
+ * all depends on where the sample lands. If you change the freeze, re-run that
+ * check; a tripwire that has never been seen to fail is not a tripwire.
+ */
+export const FreezesEntryAnimations: StoryObj<typeof AuditMatrix> = {
+  render: () => <MotionProbe />,
+  play: async ({ canvas }) => {
+    const probe = canvas.getByTestId('motion-probe')
+    const computed = getComputedStyle(probe)
+
+    // The frame axe would measure. Anything below 1 is a frame no user settles
+    // on, and a contrast reading taken from it is meaningless.
+    await expect(computed.opacity).toBe('1')
+
+    // Belt and braces on the mechanism itself: a 0.3s animation still declared
+    // as running would drift back to flaky even if this particular sample
+    // happened to land at full opacity.
+    await expect(computed.animationDuration).toBe('0.001s')
   },
 }

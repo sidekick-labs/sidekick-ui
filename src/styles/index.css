@@ -25,6 +25,35 @@
  * unaffected either way — it is a verbatim copy of the source. */
 @source inline("text-accent-text");
 
+/* Keep the GATE'S OWN plumbing out of the published bundle.
+ *
+ * Tailwind v4 auto source detection scans the whole project as raw TEXT — it
+ * does not parse JSX, and it does not care whether a string is a className, a
+ * CSS declaration inside a template literal, or a sentence in a comment. This
+ * stylesheet is what `vite.config.ts` compiles into the PUBLISHED
+ * `dist/styles/index.css`, so anything that reads like a utility anywhere in
+ * the repo ships to consumers.
+ *
+ * `preview.tsx` and `audit-matrix.stories.tsx` are the a11y gate's plumbing, not
+ * library surface. Both discuss utilities in prose and CSS strings without
+ * rendering any: the frozen-motion decorator injects a stylesheet as a template
+ * literal whose `transition-delay` declaration reads as the `transition`
+ * utility, adding a ~480-byte rule to the published bundle that no consumer
+ * asked for. Together the two files leaked 527 bytes.
+ *
+ * Safe because neither styles anything with utility classes — both use inline
+ * `style` objects. That is now load-bearing: a utility class added to either
+ * file will render unstyled. Style inline there, or put the component under
+ * `src/components/`.
+ *
+ * Deliberately scoped to these TWO FILES rather than `.storybook/` and
+ * `src/test/` wholesale — `Foundations.mdx` is a real token catalog whose
+ * references (`bg-primary`, `text-text-secondary`, and the fade-in `@theme`
+ * variable) are the only thing keeping those rules in the bundle at all.
+ * Excluding its directory silently drops them; measured. */
+@source not "../../.storybook/preview.tsx";
+@source not "../test/audit-matrix.stories.tsx";
+
 @layer base {
   html {
     @apply antialiased;

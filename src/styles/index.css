@@ -81,6 +81,41 @@
 @source not "../../.storybook/preview.tsx";
 @source not "../test/audit-matrix.stories.tsx";
 
+/* CHANGELOG.md, for the same reason and then some.
+ *
+ * Caught while writing the 0.12.0 entry: prose describing the overlay
+ * animations — naming `animate-in`, `zoom-in-95` and friends so a reader knows
+ * which classes were dead — put **876 bytes** of real utilities into
+ * `dist/styles/index.css`. Measured: 60,774 B without the entry, 61,650 B with.
+ * The changelog documenting this exact trap sprang it.
+ *
+ * Excluded rather than policed, deliberately. The alternative is a standing rule
+ * that no changelog entry may ever spell a class name, which is unenforceable
+ * and would make the honest entries worse — you cannot explain that
+ * `animate-in` compiled to nothing without writing `animate-in`. Nothing in a
+ * changelog ever needs to render, so there is no cost to excluding it, unlike
+ * `Foundations.mdx` above whose references ARE load-bearing. */
+@source not "../../CHANGELOG.md";
+
+/* …which then exposed something the changelog had been holding up by accident.
+ *
+ * Excluding it dropped **13.5 KB** — the whole `@tailwindcss/typography` block —
+ * because the single word "prose", appearing ONCE in an old changelog entry, was
+ * the only `prose` candidate Tailwind could find in the entire scanned tree. No
+ * `.tsx` in this library uses it. Yet the `.prose h1…h6` overrides below are
+ * ours, deliberate, and meaningless without the plugin's base rules under them.
+ *
+ * So `./styles` consumers rendering markdown have been served a working `.prose`
+ * for several releases on the strength of a word in a changelog. Removing the
+ * changelog from the scan without this line would have silently shipped them
+ * naked overrides.
+ *
+ * Safelisted so the dependency is DECLARED. It is not a new cost — it preserves
+ * exactly what 0.11.0 shipped — it just no longer rests on prose nobody thought
+ * of as source. If the `.prose` overrides below are ever removed, remove this
+ * too and the 13.5 KB goes with them, on purpose rather than by accident. */
+@source inline("prose");
+
 @layer base {
   html {
     @apply antialiased;

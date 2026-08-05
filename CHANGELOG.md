@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-03
+
+### Fixed
+
+- **CONSUMER-AFFECTING — the overlay entry animations have never worked, and now do.** `dialog`, `alert-dialog`, `dropdown-menu`, `popover` and `tooltip` all carry `animate-in` / `fade-in-0` / `zoom-in-95` / `slide-in-from-*` (and matching `animate-out` exits) — 8 uses across the 5 components. **This package installed neither `tailwindcss-animate` nor `tw-animate-css`**, so none of those utilities compiled: a build of the pre-change tree contains **zero** occurrences of `animate-in`, `fade-in-0`, `zoom-in-95` or `slide-in-from` in `dist/styles/index.css`. Every consumer has been receiving overlays whose animation classes are inert names.
+
+  Found while porting the Storybook motion freeze (below). Identifying which animation mechanism each repo actually uses is not a question anyone had needed to ask before; here the answer turned out to be "none".
+
+  The fix is `tw-animate-css@^1.4.0`, chosen on evidence rather than convention. `tailwindcss-animate` is a v3-era JS plugin (`matchUtilities` + `theme.extend`) and this package is Tailwind v4 with no JS config; `tw-animate-css` covers **every** class in use, including the awkward `slide-in-from-left-1/2` (ratio) and `slide-out-to-top-[48%]` (arbitrary) forms the dialogs use for centering. It also matches the version `sidekick-web` already depends on.
+
+  It is imported **before** `./theme.css`, deliberately: `tw-animate-css` ships its own `--animate-accordion-*` in `@theme inline`, and this repo defines those against its own keyframes. Later wins, so the local tokens stay authoritative.
+
+  **Bundle cost, stated plainly:** `dist/styles/index.css` 56,241 → 60,712 B (**+4,471 B, +7.9%**; gzip 10,232 → 10,885 B, **+653 B / +6.4%**). `dist/index.js` is byte-identical.
+
+  **What consumers will see.** Overlays that have always appeared instantly will now fade, zoom and slide in. The **settled** appearance is unchanged — the Playwright visual-regression snapshots passed with no diffs — so this affects the transition into each state, not the state itself. Released as **minor, not patch**, on purpose: `^0.11.0` does not admit `0.12.0`, so each app adopts this via an explicit bump rather than absorbing a visual change on the next lockfile refresh.
+
+- **`CHANGELOG.md` was being compiled into the published stylesheet, and no longer is.** Tailwind v4 scans source as raw _text_, so a changelog naming a utility is indistinguishable from a component using one. Writing the entry above — which has to spell `animate-in`, `zoom-in-95` and friends to explain what was dead — put **876 bytes** of real utilities into `dist/styles/index.css`. Now excluded via `@source not`, rather than by a standing rule that changelog prose may never name a class, which is unenforceable and would make honest entries worse.
+
+  Six rules leave the bundle, all of them provably dead: bare `.animate-out`, `.transition`, `.paused`, `.slide-in-from-left-1/2` and `.slide-out-to-top-[48%]` — the library only ever uses these behind `data-[state=…]` variants, which compile to different selectors and are unaffected — plus **`.text-[var(--color-…-text)]`**, a rule whose custom property contains a literal ellipsis, generated from an em-dashed _sentence_ in the 0.11.0 entry and shipped to consumers as real CSS.
+
+  **The exclusion then exposed a genuine dependency resting on nothing.** Removing the changelog from the scan initially dropped **13.5 KB** — the entire `@tailwindcss/typography` block — because the single word "prose", appearing **once** in an old entry, was the only `prose` candidate in the whole scanned tree. No `.tsx` in this library uses it; yet `src/styles/index.css`'s own `.prose h1…h6` overrides are deliberate and meaningless without the plugin's base rules beneath them. So `./styles` consumers rendering markdown have had a working `.prose` for several releases on the strength of a word in a changelog. It is now safelisted with `@source inline("prose")` — **not a new cost, it preserves exactly what 0.11.0 shipped**, but the dependency is declared instead of accidental.
+
+  Net effect on the bundle after both: 62 bytes **smaller** than 0.11.0's equivalent output, with nothing added and nothing real removed.
+
+### Changed
+
+- **Storybook a11y gate: entry animations are frozen under the test runner.** axe reads _computed_ style, so a component sampled mid-fade is not the component that ships and its contrast is a different number every run. Storybook 10 is not neutral here — before the axe pass it applies `animation-play-state: paused !important`, which holds each element at whatever frame it happened to reach, making a **wrong** frame stable for one audit without making it the **same** frame twice.
+
+  A `withFrozenMotion` decorator now collapses animations and transitions to 1ms with a negative delay, under the test runner only (interactive Storybook keeps its motion). `1ms` rather than `animation: none`, because `none` can strand an element at its pre-animation base state — for an entry animation, the invisible one.
+
+  Measured with the freeze removed: **`opacity: 0` on all four gate instances**, not a partial value. At `opacity: 0` there is no colour for axe to measure, which is why this presented as flake rather than as a consistently wrong number.
+
+  No consumer-visible output change for this half — `dist` verified byte-identical. Two `@source not` lines were needed to keep it that way: Tailwind v4 scans source as raw text, and the decorator's CSS string was otherwise emitting a real `.transition` rule plus a comment-named utility into the published bundle (527 B). They are scoped to the two exact **files**; excluding the `.storybook/` **directory** silently dropped three tokens whose only reference was an MDX doc.
+
 ## [0.11.0] - 2026-07-29
 
 ### Added

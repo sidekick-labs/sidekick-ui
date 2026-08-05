@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
       id-token: write
       security-events: read
     uses: sidekick-labs/.github/.github/workflows/reusable-weekly-maintenance.yml@v3

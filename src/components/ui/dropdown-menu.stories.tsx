@@ -60,16 +60,13 @@ export const OpenInteraction: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
-  parameters: {
-    a11y: {
-      // With the menu open, Radix marks the rest of the page `aria-hidden` while
-      // its FocusScope traps focus inside the portal. axe momentarily sees the
-      // (still-focusable) trigger button inside that aria-hidden region and flags
-      // `aria-hidden-focus` — a known false positive for Radix's modal menu, which
-      // manages focus correctly. Scope-disable ONLY this rule for ONLY this story.
-      config: { rules: [{ id: 'aria-hidden-focus', enabled: false }] },
-    },
-  },
+  // `aria-hidden-focus` is deliberately NOT parked here. It was, on the reasoning
+  // that it is "a known false positive for Radix's modal menu, which manages focus
+  // correctly" — and that was wrong twice over: the trigger really is focusable
+  // inside an aria-hidden subtree, and the menu was only modal because nothing
+  // told it otherwise. The component now passes `modal={false}`, so the condition
+  // is gone rather than suppressed, and this story is the regression guard for
+  // that prop. See core-platform-brain#400 / #436.
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Actions' }))

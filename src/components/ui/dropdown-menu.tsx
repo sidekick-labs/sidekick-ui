@@ -3,7 +3,28 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { Check, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const DropdownMenu = DropdownMenuPrimitive.Root
+// A menu button is not a dialog. Radix's `modal` default (`true`) runs
+// `hideOthers()`, which marks everything outside the portal `aria-hidden` —
+// including the trigger, which Radix deliberately leaves focusable so Escape can
+// restore focus to it. A focusable element inside an `aria-hidden` subtree is
+// WCAG 4.1.2, which is what axe reports as `aria-hidden-focus`.
+//
+// W3C APG's Menu and Menubar pattern requires Tab to move focus OUT of the menu
+// and close it — the opposite of a focus trap — and never mentions `aria-hidden`
+// or focus containment. Those belong to the Dialog pattern. So `modal={false}`
+// is conformance rather than a workaround, and it removes the condition instead
+// of suppressing the rule that detects it.
+//
+// Ratified estate-wide in core-platform-brain#400; this package was the last
+// holdout (#436). Still overridable, so a menu that genuinely needs dialog
+// semantics can pass `modal` explicitly.
+const DropdownMenu = ({
+  modal = false,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>) => (
+  <DropdownMenuPrimitive.Root modal={modal} {...props} />
+)
+DropdownMenu.displayName = 'DropdownMenu'
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 

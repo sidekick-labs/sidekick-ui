@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-05
+
+### Fixed
+
+- **CONSUMER-AFFECTING — `DropdownMenu` is no longer modal, and the accessibility rule that would have caught it is no longer suppressed.** `DropdownMenu` now defaults to `modal={false}`; pass `modal` explicitly for the rare menu that genuinely wants dialog semantics.
+
+  Radix's `modal` default (`true`) runs `hideOthers()`, which marks everything outside the portal `aria-hidden` — including the trigger, which Radix deliberately leaves focusable so Escape can restore focus to it. A focusable element inside an `aria-hidden` subtree is **WCAG 4.1.2**, and axe reports it as `aria-hidden-focus`. This package suppressed that rule in its stories on the stated grounds that it was "a known false positive for Radix's modal menu, which manages focus correctly". That was wrong twice over: the trigger really is focusable inside an aria-hidden subtree, and the menu was only modal because nothing told it otherwise.
+
+  W3C APG's Menu and Menubar pattern requires <kbd>Tab</kbd> to move focus **out** of the menu and close it — the opposite of a focus trap — and never mentions `aria-hidden` or focus containment. Those belong to the Dialog pattern. So `modal={true}` on a menu button is the deviation, and `modal={false}` is conformance. Ratified estate-wide in `core-platform-brain#400`; this package was the last holdout (`#436`).
+
+  **Behavioural change consumers will notice:** the page can scroll under an open menu, and outside pointer events are no longer blocked. APG requires neither, and the menu still dismisses on outside interaction. That is why this is a minor rather than a patch — `^0.12.0` would have absorbed it silently.
+
+  `Popover` was checked and needed nothing: its Radix default is already `modal = false`, confirmed from the built runtime rather than the type signature (which declares `modal?: boolean` for both and proves nothing either way).
+
+  The `aria-hidden-focus` park is deleted, so the dropdown stories are now the regression guard for the prop. Negative-controlled: restoring `modal = true` reproduces the violations; the fix gives 684 passing across 136 files.
+
+  **Bundle cost: none.** `dist/styles/index.css` stays at 60,712 B and `dist/index.js` is unchanged in kind — this is a component default, not a style. Measured rather than assumed, because writing the 0.12.0 changelog leaked 876 B of real utilities into the published CSS (Tailwind v4 scans prose as raw text); `@source not "../../CHANGELOG.md"` has covered that since, and this build confirms it still holds.
+
 ## [0.12.0] - 2026-08-03
 
 ### Fixed

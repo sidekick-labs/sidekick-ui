@@ -68,86 +68,13 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Verify d.ts entry exports types
-        run: |
-          if [ ! -f dist/index.d.ts ]; then
-            echo "::error::dist/index.d.ts is missing — check vite-plugin-dts config (entryRoot must match build entry directory)."
-            exit 1
-          fi
-          if ! grep -q '^export' dist/index.d.ts; then
-            echo "::error::dist/index.d.ts contains no exports — type rollup is broken."
-            exit 1
-          fi
-          # Guard against a "successful" build that silently emits an empty
-          # stub. vite-plugin-dts@5 + a too-new TypeScript make API Extractor
-          # roll types up to just `export { }` (sidekick-ui#122 → v0.7.0 was
-          # tagged but never published). A file that contains ONLY an empty
-          # export object — and no real declarations — must fail the gate.
-          if ! grep -qE '\bdeclare\b|^export[[:space:]]+(declare|type|interface|function|const|class|default)\b' dist/index.d.ts; then
-            echo "::error::dist/index.d.ts has no real type declarations (looks like an empty 'export {}' stub) — type rollup is broken. See sidekick-ui#122."
-            echo "::group::dist/index.d.ts (first 40 lines)"
-            head -n 40 dist/index.d.ts
-            echo "::endgroup::"
-            exit 1
-          fi
-          DTS_LINES=$(wc -l < dist/index.d.ts)
-          if [ "$DTS_LINES" -lt 20 ]; then
-            echo "::error::dist/index.d.ts is only $DTS_LINES lines — implausibly small for the full public API. Suspect a broken type rollup."
-            echo "::group::dist/index.d.ts"
-            cat dist/index.d.ts
-            echo "::endgroup::"
-            exit 1
-          fi
-          echo "::notice::dist/index.d.ts has $DTS_LINES lines of exports"
-
-      - name: Verify the ./theme export ships raw, uncompiled tokens
-        run: |
-          # `npm publish --ignore-scripts` means dist/ is whatever the Build
-          # step produced — so verify the artifact, not the intent. The theme
-          # entry is only useful to consumers if it stays an UNCOMPILED @theme
-          # block: that is what lets their own Tailwind compose and tree-shake
-          # it. A copy that accidentally went through the Tailwind pipeline
-          # would still be a valid CSS file, still publish, and silently stack
-          # a second preflight on every consumer.
-          if [ ! -f dist/styles/theme.css ]; then
-            echo "::error::dist/styles/theme.css is missing — the ./theme export would 404. Check scripts/copy-theme.mjs ran in the build."
-            exit 1
-          fi
-          if ! diff -q src/styles/theme.css dist/styles/theme.css > /dev/null; then
-            echo "::error::dist/styles/theme.css is not byte-identical to src/styles/theme.css — the published tokens would not match the source of truth."
-            diff src/styles/theme.css dist/styles/theme.css || true
-            exit 1
-          fi
-          if ! grep -q '@theme' dist/styles/theme.css; then
-            echo "::error::dist/styles/theme.css has no @theme block."
-            exit 1
-          fi
-          if grep -qE '@layer utilities|@property' dist/styles/theme.css; then
-            echo "::error::dist/styles/theme.css looks Tailwind-COMPILED — it must stay a raw @theme block."
-            exit 1
-          fi
-          echo "::notice::dist/styles/theme.css is byte-identical to source and uncompiled"
-
-      - name: Verify package contents
-        run: |
-          npm pack --dry-run
-          # Fail loudly if the theme entry is not actually IN the tarball —
-          # `files: ["dist"]` includes it today, but a future narrowing of that
-          # list would break the ./theme export with no other signal.
-          npm pack --dry-run --json | node -e "
-            let s='';
-            process.stdin.on('data', d => (s += d));
-            process.stdin.on('end', () => {
-              const files = JSON.parse(s)[0].files.map(f => f.path);
-              for (const required of ['dist/styles/theme.css', 'dist/index.d.ts']) {
-                if (!files.includes(required)) {
-                  console.log('::error::' + required + ' is not in the published tarball');
-                  process.exit(1);
-                }
-              }
-              console.log('::notice::tarball contains ' + files.length + ' files including dist/styles/theme.css');
-            });
-          "
+      # All three artifact guards (d.ts type rollup, raw ./theme tokens, tarball
+      # contents) live in scripts/verify-dist.mjs so CI runs the SAME checks on
+      # every PR. They used to live here only, which meant the first signal of a
+      # broken type rollup was a failed publish AFTER the tag and GitHub Release
+      # already existed — that is how v0.7.0 was burned (sidekick-ui#122).
+      - name: Verify built package is publishable
+        run: npm run verify:dist
 
       - name: Publish package
         run: |

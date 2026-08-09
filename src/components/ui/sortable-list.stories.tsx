@@ -162,6 +162,15 @@ export const KeyboardReorder: Story = {
 
     // The list really reordered, and the overlay unmounted on drag end.
     await waitFor(() => expect(domOrder(canvasElement)).toEqual(['2', '1', '3', '4']))
+
+    // Pick up and drop straight back down: `active.id === over.id`, so
+    // handleDragEnd must return early without firing onReorder again.
+    const handle = canvas.getByRole('button', { name: 'Drag Welcome message' })
+    handle.focus()
+    await userEvent.keyboard('[Space]')
+    await userEvent.keyboard('[Space]')
+    await waitFor(() => expect(domOrder(canvasElement)).toEqual(['2', '1', '3', '4']))
+    await expect(reorderSpy).toHaveBeenCalledTimes(1)
   },
 }
 

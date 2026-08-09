@@ -39,8 +39,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # --coverage makes the per-glob thresholds in vitest.config.ts actually
+      # gate. They were configured but never enforced: CI ran the bare
+      # `test:run`, so the numbers were decoration.
       - name: Test
-        run: npm run test:run
+        run: npm run test:coverage
 
       - name: Run TypeScript type check
         run: npm run check
@@ -48,8 +51,10 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Verify package contents
-        run: npm pack --dry-run
+      # The same guards publish.yml runs, but on every PR — a broken type
+      # rollup must not reach a tag. See scripts/verify-dist.mjs.
+      - name: Verify built package is publishable
+        run: npm run verify:dist
 
   # Lives here — NOT in e2e.yml — deliberately. This job is a required status
   # check on main, and e2e.yml is workflow-level path-filtered: a workflow that

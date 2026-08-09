@@ -116,6 +116,7 @@
   "scripts": {
     "build": "vite build && node scripts/copy-theme.mjs",
     "check": "tsc --noEmit",
+    "verify:dist": "node scripts/verify-dist.mjs",
     "test": "vitest --project=unit",
     "test:run": "vitest run --project=unit",
     "test:coverage": "vitest run --project=unit --coverage",

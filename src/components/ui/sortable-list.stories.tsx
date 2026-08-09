@@ -90,13 +90,15 @@ export const Empty: Story = {
 
 // --- Interaction stories -----------------------------------------------------
 //
-// Drag-and-drop cannot be simulated in jsdom (no layout engine), but these
-// stories run under the `storybook` Vitest project in REAL Chromium, where
+// These run under the `storybook` Vitest project in REAL Chromium, where
 // dnd-kit's KeyboardSensor (wired in sortable-list.tsx) performs a genuine
-// reorder from Space → Arrow → Space with no pointer geometry involved.
+// reorder from Space → Arrow → Space with no pointer geometry involved — real
+// layout, real key events, real collision detection.
 //
-// These drive the component's OWN handleDragStart / handleDragEnd / optimistic
-// update / rollback closure — deleting any of them fails these stories.
+// They drive the component's OWN handleDragStart / handleDragEnd / optimistic
+// update / rollback closure: deleting any of them fails these stories. This is
+// the authoritative drag check; `sortable-list.test.tsx` mirrors it in jsdom
+// against a stubbed layout so the same paths land in the coverage report.
 
 /** Read the current list order straight out of the DOM. */
 function domOrder(canvasElement: HTMLElement): string[] {
@@ -190,7 +192,7 @@ export const RollbackOnError: Story = {
       // failed API call, so the only thing that can restore the list is the
       // component's own rollback closure.
       const [items] = React.useState(initialItems)
-      const rollback = React.useRef<(() => void) | null>(null)
+      const rollbackRef = React.useRef<(() => void) | null>(null)
       const [pending, setPending] = React.useState(false)
       return (
         <div className="flex flex-col gap-3">
@@ -199,7 +201,7 @@ export const RollbackOnError: Story = {
               items={items}
               onReorder={(orderedIds, onError) => {
                 rollbackSpy(orderedIds)
-                rollback.current = onError
+                rollbackRef.current = onError
                 setPending(true)
               }}
               renderItem={renderRow}
@@ -217,7 +219,7 @@ export const RollbackOnError: Story = {
             type="button"
             disabled={!pending}
             onClick={() => {
-              rollback.current?.()
+              rollbackRef.current?.()
               setPending(false)
             }}
             className="self-start rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm text-[var(--color-text)] disabled:opacity-50"

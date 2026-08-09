@@ -158,6 +158,22 @@ function renderSortable(props: Partial<React.ComponentProps<typeof SortableList<
   return { ...view, onReorder }
 }
 
+/** Stubbed geometry: the list is a vertical stack of equal-height rows. */
+function measure(element: Element): DOMRect {
+  const list = laidOutList
+  if (!list) return fakeRect(0, 0, 0, 0)
+  if (element === list) return fakeRect(0, 0, 300, ROW_HEIGHT * list.children.length)
+  // Any descendant of a row reports that row's box — enough for
+  // closestCenter, and it is what the activator handle needs.
+  let node: Element | null = element
+  while (node && node.parentElement !== list) node = node.parentElement
+  if (node) {
+    const index = Array.prototype.indexOf.call(list.children, node)
+    return fakeRect(0, index * ROW_HEIGHT, 300, ROW_HEIGHT)
+  }
+  return fakeRect(0, 0, 300, ROW_HEIGHT * list.children.length)
+}
+
 async function press(key: string) {
   const target = document.activeElement ?? document.body
   // async act: dnd-kit settles drag start/end across a rAF tick.
@@ -180,18 +196,7 @@ describe('SortableList keyboard drag', () => {
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
       this: Element,
     ) {
-      const list = laidOutList
-      if (!list) return fakeRect(0, 0, 0, 0)
-      if (this === list) return fakeRect(0, 0, 300, ROW_HEIGHT * list.children.length)
-      // Any descendant of a row reports that row's box (good enough for
-      // closestCenter, and it is what the activator handle needs).
-      let node: Element | null = this
-      while (node && node.parentElement !== list) node = node.parentElement
-      if (node) {
-        const index = Array.prototype.indexOf.call(list.children, node)
-        return fakeRect(0, index * ROW_HEIGHT, 300, ROW_HEIGHT)
-      }
-      return fakeRect(0, 0, 300, ROW_HEIGHT * list.children.length)
+      return measure(this)
     })
   })
 

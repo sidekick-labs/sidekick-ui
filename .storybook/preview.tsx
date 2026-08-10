@@ -105,7 +105,7 @@ const preview: Preview = {
       //
       // Scoped to the Vitest browser run on purpose. The Playwright
       // visual-regression job (`e2e/storybook.spec.ts`) takes FULL-PAGE
-      // screenshots of the preview iframe against 14 committed
+      // screenshots of the preview iframe against the committed
       // `*-chromium-linux` baselines, so painting <body> unconditionally would
       // invalidate every one of them — and they cannot be correctly
       // regenerated from a macOS dev box, which writes `*-darwin` files and

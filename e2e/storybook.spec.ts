@@ -119,7 +119,25 @@ test.describe('Visual regression — Storybook', () => {
   })
 
   // --- Interactive: DropdownMenu (open state via portal) ---
-  test('DropdownMenu — Default (open state)', async ({ page }) => {
+  // NOT STABLE — held back rather than pinned to a lie. Regenerating every
+  // baseline twice on ubuntu-latest, same commit, same workflow, produced
+  // byte-identical PNGs for 32 of 34 cases; this was one of the two that did
+  // not. It reproduces a ~3,839px delta run to run.
+  //
+  // Almost certainly the Radix portal: the menu carries `data-[state=open]`
+  // zoom-in-95 / slide-in-from-top-2 entrance classes and is positioned by
+  // Floating UI, so it can settle a pixel or two off between runs — and a
+  // whole menu shifted by 1px is a large diff area.
+  //
+  // Worth noting what this cost before: under the previous
+  // `maxDiffPixelRatio: 0.01` (≈9,216px on a 1280x720 capture) this case
+  // "passed" every run while rendering different pixels each time. The
+  // baseline asserted nothing, and looked green doing it.
+  //
+  // `fixme` rather than a silent skip so it stays visible in the report.
+  // Fix by screenshotting the menu element instead of the full page, or by
+  // waiting for the animation to settle. See sidekick-labs/native-experiences-brain#726.
+  test.fixme('DropdownMenu — Default (open state)', async ({ page }) => {
     await gotoStory(page, 'ui-dropdownmenu--default')
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('menu').waitFor()
@@ -133,7 +151,12 @@ test.describe('Visual regression — Storybook', () => {
   })
 
   // --- Layout: StatsGrid (composed dashboard widget) ---
-  test('StatsGrid — Default', async ({ page }) => {
+  // NOT STABLE — the second of the two, ~1,596px run to run under the same
+  // double-regeneration check described above. Unlike the DropdownMenu case
+  // the cause is NOT identified: the component declares no animation or
+  // transition, and the story feeds it fixed data. Held back rather than
+  // guessed at. See sidekick-labs/native-experiences-brain#726.
+  test.fixme('StatsGrid — Default', async ({ page }) => {
     await gotoStory(page, 'ui-statsgrid--default')
     await expect(page).toHaveScreenshot('stats-grid-default.png')
   })

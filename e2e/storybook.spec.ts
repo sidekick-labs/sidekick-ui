@@ -12,6 +12,19 @@ import { test, expect } from '@playwright/test'
  * every PNG, then commit. A macOS `--update-snapshots` run writes `*-darwin`
  * files that CI never compares against, and a macOS-rendered PNG committed as
  * the `*-chromium-linux` baseline diffs forever on font hinting alone.
+ *
+ * DIAGNOSING A FAILING CASE — compare the right two things.
+ * Regenerate twice and compare the two REGENERATIONS TO EACH OTHER. That, and
+ * only that, answers "does this render deterministically?". Comparing a
+ * regeneration to the COMMITTED baseline answers a different question — "is the
+ * committed baseline current?" — and a stale baseline fails it just as loudly.
+ * Reading the second result as the first is what produced the "two cases render
+ * non-deterministically" finding in native-experiences-brain#726: both cases
+ * were byte-identical across 15 renders, and both baselines were 3.5 months old.
+ * `visual-baselines.yml` now runs that self-check for you and fails on it.
+ *
+ * A stable pixel count across repeated runs (3,839 every time, not 3,800-3,900)
+ * is the tell: a flake wobbles, a stale baseline does not.
  */
 
 const STORY_LOAD_SELECTOR = '#storybook-root *'
@@ -119,25 +132,31 @@ test.describe('Visual regression — Storybook', () => {
   })
 
   // --- Interactive: DropdownMenu (open state via portal) ---
-  // NOT STABLE — held back rather than pinned to a lie. Regenerating every
-  // baseline twice on ubuntu-latest, same commit, same workflow, produced
-  // byte-identical PNGs for 32 of 34 cases; this was one of the two that did
-  // not. It reproduces a ~3,839px delta run to run.
+  // Was held back as `test.fixme` on the theory that Radix's portal settled a
+  // pixel or two differently between runs. That theory was wrong, and so was
+  // the premise under it: this case is not non-deterministic at all.
   //
-  // Almost certainly the Radix portal: the menu carries `data-[state=open]`
-  // zoom-in-95 / slide-in-from-top-2 entrance classes and is positioned by
-  // Floating UI, so it can settle a pixel or two off between runs — and a
-  // whole menu shifted by 1px is a large diff area.
+  // ubuntu-latest renders it byte-identically. Measured 15 times across two
+  // separate workflow runs (10 isolated repeats, 3 full-suite runs, and two
+  // independent `--update-snapshots` regenerations on a different runner VM):
+  // one single sha256 for all 15. The ~3,839px delta was stable to the pixel on
+  // every one of them, which is the signature of a WRONG BASELINE, not a flake.
   //
-  // Worth noting what this cost before: under the previous
-  // `maxDiffPixelRatio: 0.01` (≈9,216px on a 1280x720 capture) this case
-  // "passed" every run while rendering different pixels each time. The
-  // baseline asserted nothing, and looked green doing it.
+  // What actually differed: the *trigger button*, not the menu. The menu is
+  // pixel-identical to its baseline. `variant="outline"` carries
+  // `hover:bg-[var(--color-primary)] hover:text-[var(--color-primary-foreground)]`,
+  // and after `.click()` the pointer is still resting on the trigger, so the
+  // capture is legitimately the hover state — solid lime, black ink. The
+  // baseline predates #183 (`modal={false}`); while the menu was still modal,
+  // Radix's overlay took the pointer off the trigger and the baseline recorded
+  // the un-hovered outline instead. Confirmed directly: after the click
+  // `trigger.matches(':hover')` is `true`, and moving the mouse away flips it
+  // to `false` with the menu still open.
   //
-  // `fixme` rather than a silent skip so it stays visible in the report.
-  // Fix by screenshotting the menu element instead of the full page, or by
-  // waiting for the animation to settle. See sidekick-labs/native-experiences-brain#726.
-  test.fixme('DropdownMenu — Default (open state)', async ({ page }) => {
+  // The baseline was therefore 3.5 months stale (last written 2026-04-29),
+  // asserting a trigger state the component no longer produces. Regenerated on
+  // ubuntu-latest. See sidekick-labs/native-experiences-brain#726.
+  test('DropdownMenu — Default (open state)', async ({ page }) => {
     await gotoStory(page, 'ui-dropdownmenu--default')
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('menu').waitFor()
@@ -151,12 +170,29 @@ test.describe('Visual regression — Storybook', () => {
   })
 
   // --- Layout: StatsGrid (composed dashboard widget) ---
-  // NOT STABLE — the second of the two, ~1,596px run to run under the same
-  // double-regeneration check described above. Unlike the DropdownMenu case
-  // the cause is NOT identified: the component declares no animation or
-  // transition, and the story feeds it fixed data. Held back rather than
-  // guessed at. See sidekick-labs/native-experiences-brain#726.
-  test.fixme('StatsGrid — Default', async ({ page }) => {
+  // The second case held back as `test.fixme` with "cause NOT identified". It
+  // is identified now, and it was never non-determinism: same 15-render
+  // byte-identical result as the DropdownMenu case above, with the ~1,596px
+  // delta stable to the pixel every time.
+  //
+  // The baseline (also last written 2026-04-29) had FROZEN A DEFECT. Sampling
+  // the PNGs: in the baseline the `text-2xl font-bold` stat values render at
+  // rgb(10,10,10) on a rgb(10,10,10) card — invisible, black on black. Today
+  // they render #ffffff. The fix landed in `Card`, which gained
+  // `text-[var(--color-text)]` precisely so "text inside the card (incl.
+  // unstyled children) inherits a contrast-safe color instead of falling back
+  // to the browser default (black on a dark surface)". `StatCard`'s value has
+  // no colour class of its own, so it was exactly that unstyled child.
+  // The labels moved too, `--color-text-muted` #737373 -> #a3a3a3 (a WCAG AA
+  // fix), which lands under Playwright's default per-pixel threshold.
+  //
+  // So the "unstable" case was the gate correctly reporting that the committed
+  // pixels were the pre-fix, unreadable ones. `ui-statcard--trend-up` renders
+  // the same component and never flagged only because ui#191 regenerated ITS
+  // baseline while this one kept the April bytes.
+  //
+  // Regenerated on ubuntu-latest. See sidekick-labs/native-experiences-brain#726.
+  test('StatsGrid — Default', async ({ page }) => {
     await gotoStory(page, 'ui-statsgrid--default')
     await expect(page).toHaveScreenshot('stats-grid-default.png')
   })

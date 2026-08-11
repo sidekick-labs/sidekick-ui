@@ -63,6 +63,56 @@ jobs:
         # ones. Retries are pointless when every assertion is being rewritten.
         run: npx playwright test --update-snapshots --retries=0
 
+      # Regenerate a SECOND time and compare the two regenerations to EACH
+      # OTHER. That is the only comparison that answers "does this render
+      # deterministically?", and it is the one that was missing.
+      #
+      # native-experiences-brain#726 compared a regeneration against the
+      # COMMITTED baselines instead, got "identical: 32 / DIFFERENT: 2", and
+      # read it as two non-deterministic cases. It was two stale baselines: the
+      # run-to-run check below reports identical=34 different=0 on that same
+      # commit. A stale baseline and a genuinely flaky case fail the
+      # committed-set comparison identically, so that comparison cannot tell
+      # them apart — and the flake reading is the one that costs you the gate.
+      #
+      # Fails the job rather than warning: an artifact of baselines that do not
+      # reproduce is not safe to commit, and handing over trustworthy pixels is
+      # the entire job of this workflow.
+      - name: Verify the baselines reproduce (regenerate again, compare to the first)
+        run: |
+          cp -r e2e/storybook.spec.ts-snapshots /tmp/gen1
+          npx playwright test --update-snapshots --retries=0
+          identical=0
+          different=0
+          for f in /tmp/gen1/*.png; do
+            name=$(basename "$f")
+            if cmp -s "$f" "e2e/storybook.spec.ts-snapshots/$name"; then
+              identical=$((identical + 1))
+            else
+              different=$((different + 1))
+              echo "::error::$name did not reproduce — it renders differently between two runs on this same runner."
+              echo "- NON-DETERMINISTIC: \`$name\`" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo "run-to-run: identical=$identical different=$different" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$different" -ne 0 ]; then
+            echo "::error::$different baseline(s) are genuinely non-deterministic. Do NOT commit this artifact as-is."
+            exit 1
+          fi
+
+      # Informational, and deliberately NOT a failure: every baseline this run
+      # legitimately refreshes appears here. This is the STALENESS report — the
+      # PNGs whose committed bytes are out of date. Read it as "what this
+      # artifact would change", never as "what is flaky".
+      - name: Report which committed baselines this run would change
+        if: ${{ !cancelled() }}
+        run: |
+          echo "### Committed baselines this artifact would change (staleness, NOT flakiness)" >> "$GITHUB_STEP_SUMMARY"
+          changed=$(git diff --name-only -- e2e/storybook.spec.ts-snapshots/ | wc -l)
+          git diff --name-only -- e2e/storybook.spec.ts-snapshots/ \
+            | sed 's#.*/#- `#; s#$#`#' >> "$GITHUB_STEP_SUMMARY"
+          echo "changed=$changed" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload regenerated baselines
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

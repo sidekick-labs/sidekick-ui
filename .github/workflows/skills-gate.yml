@@ -1,0 +1,28 @@
+name: Skills Gate
+
+# Thin caller for the org-shared skills-portability gate in sidekick-labs/.github.
+# Fails a PR whose committed `.claude/` files tell the agent to READ a skill off
+# somebody's local disk instead of invoking the marketplace plugin skill.
+#
+# Why: `/ship`'s babysit hand-off used to say `Read
+# ~/Workspace/sidekick-labs/.claude/skills/babysit/SKILL.md`. The workspace root
+# is not a git repo, so nothing distributed that file — it resolved on one
+# laptop. Everywhere else the babysit loop (CI-fixing, review-addressing, the
+# autonomous merge under Rule #7) silently never started while `/ship` still
+# reported success. See sidekick-labs/octo-brain#426.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: skills-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  skills-portability:
+    permissions:
+      contents: read
+    uses: sidekick-labs/.github/.github/workflows/skills-portability.yml@main

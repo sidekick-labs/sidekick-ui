@@ -272,14 +272,20 @@ EOF
 Opening the PR is not the end of `/ship`. Unless the PR is a draft, **continue
 into the babysit loop now** — don't stop at "PR created."
 
-Read `~/Workspace/sidekick-labs/.claude/skills/babysit/SKILL.md` and follow its
+Invoke the `/babysit` skill (from the `sidekick-workflows` plugin) and follow its
 loop **inline**: read PR state → address review findings → fix failing CI →
 rebase if behind → re-validate (re-running this skill's own validation steps) →
 amend the single commit and `--force-with-lease` → iterate to the ready gate.
 `/babysit` owns what happens at the gate (merge once the Rule #7 bar holds, or
 hand off if a safeguard is missing); the staging deploy-watch + health probe is
-`/land`. Do **not** re-invoke `/ship` or `/babysit` via the Skill tool — read
-the file and apply it inline.
+`/land`. Invoke `/babysit` **once** and carry its loop inline from there — don't
+re-enter `/ship`, and don't re-invoke `/babysit` from inside its own loop.
+
+If `/babysit` doesn't resolve, the `sidekick-workflows` plugin isn't installed —
+**say so and stop** at the PR URL. Don't silently skip the loop: that failure is
+invisible otherwise (`/ship` reports success while the whole merge gate never
+runs). Setup is `/plugin marketplace add sidekick-labs/claude-plugins` then
+`/plugin install sidekick-workflows`.
 
 **If `--draft` was passed, skip babysit** — report the PR URL and stop. A draft
 signals the work isn't ready for the merge path yet.

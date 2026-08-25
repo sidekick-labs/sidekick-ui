@@ -69,7 +69,7 @@ src/
 - **Peer dependencies** — React 19, React-DOM 19 (consumers provide these).
 - **Dependencies** — Radix UI, clsx, tailwind-merge, lucide-react (externalized in build; bundled by consumers).
 
-Applicable workspace conventions (see `.claude/conventions/`):
+Applicable workspace conventions (see [the conventions index](https://github.com/sidekick-labs/octo-brain/blob/main/.claude/conventions/README.md)):
 
 - **`storybook-frontend-only-catalog.md`** — UI primitives (`Components/*`) live **only** here in `@sidekick-labs/ui`; this repo owns the shared components and the estate's visual-regression baselines. See the `storybook` skill.
 - **`claude-md-shape.md`** — the skeleton this file follows.
@@ -92,7 +92,7 @@ Applicable workspace conventions (see `.claude/conventions/`):
 
 Storybook is the component catalog and the home of the library's two automated UI gates — Playwright visual regression (`npm run test:e2e`) and the story-test gate (`npm run test:storybook`: render-smoke + `play` + axe a11y, via `@storybook/addon-vitest` in Vitest browser mode). The a11y gate is **`parameters.a11y.test: 'error'`** in `.storybook/preview.tsx` — it fails on ANY axe violation, at any impact, since addon-vitest has no impact tiering. Full how-to (the Vitest project layout, the a11y policy, per-story scope-disable, browser-mode gotchas, fixing contrast/token violations) lives in the **`storybook` skill** (`.claude/skills/storybook/`).
 
-Decision rule: `.claude/conventions/storybook-frontend-only-catalog.md`.
+Decision rule: [`storybook-frontend-only-catalog.md`](https://github.com/sidekick-labs/octo-brain/blob/main/.claude/conventions/storybook-frontend-only-catalog.md).
 
 ## Publishing
 

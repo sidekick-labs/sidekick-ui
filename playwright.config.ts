@@ -21,8 +21,8 @@ import { defineConfig, devices } from '@playwright/test'
  * 200 is a courtesy buffer against occasional font/GPU jitter, not a budget.
  *
  * Port 6011 is this repo's slot in the estate-wide Storybook port allocation
- * (see .claude/conventions/storybook-a11y-testing.md in the rarebit-one
- * workspace) — every Storybook used to default to 6006, so no two could run at
+ * (see https://github.com/rarebit-one/rarebit-sre/blob/main/.claude/conventions/storybook-a11y-testing.md)
+ * — every Storybook used to default to 6006, so no two could run at
  * once. It must stay in sync with the `storybook` script in package.json, which
  * `webServer.command` below spawns.
  */

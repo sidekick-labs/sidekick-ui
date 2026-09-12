@@ -138,6 +138,19 @@ export type {
   TableCellProps,
 } from './data-table'
 
+export { DataTableView } from './data-table-view'
+export type { DataTableViewProps } from './data-table-view'
+// Re-export the TanStack helpers/types consumers need to build columns, so they
+// compose `DataTableView` without importing `@tanstack/react-table` directly.
+export { createColumnHelper, flexRender } from '@tanstack/react-table'
+export type {
+  ColumnDef,
+  SortingState,
+  OnChangeFn,
+  Row,
+  Table as TanStackTable,
+} from '@tanstack/react-table'
+
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
 export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs'
 

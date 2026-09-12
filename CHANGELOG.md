@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`DataTableView` — a behaviour layer over the `DataTable` styling primitives, backed by `@tanstack/react-table` (v8).** Interactive tables get client-side sorting (controlled or uncontrolled), optional global filtering, column definitions, an empty state and row-click handling without reimplementing `useState`/`useMemo` sort logic per page. It composes the existing `DataTable`/`TableHeader`/`TableRow`/`TableHead`/`TableCell` markup — same DOM, same Tailwind classes, same visual-regression baselines — so it is purely additive: the primitives are untouched and remain the right tool for render-only tables.
+
+  Sortable headers render as `<button>`s inside their `<th>`, which carries `aria-sort` (`ascending`/`descending`/`none`); non-sortable columns stay plain text with no `aria-sort`. Covered by unit tests (sort semantics, controlled state, aria-sort, empty state, row click) and an axe a11y test, plus `UI/DataTableView` stories (including an interaction `play` that toggles sort).
+
+  New exports: `DataTableView`, `DataTableViewProps`, and the TanStack helpers/types consumers need to build columns without importing `@tanstack/react-table` directly — `createColumnHelper`, `flexRender`, and the types `ColumnDef`, `SortingState`, `OnChangeFn`, `Row`, `TanStackTable`. `@tanstack/react-table` is a new runtime dependency, externalized from the bundle (consumers receive it transitively) — `dist/index.js` inlines none of its internals.
+
+  Adopted the mature **v8** line deliberately: v9 (2026) is a ground-up rewrite (TanStack Store atom reactivity, feature-composition API, a `useLegacyTable` compat shim), which is more churn than a first low-blast-radius adoption warrants. See `core-platform-brain#514`.
+
 ## [0.13.0] - 2026-08-05
 
 ### Fixed

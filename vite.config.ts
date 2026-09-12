@@ -33,6 +33,7 @@ export default defineConfig({
         'react/jsx-runtime',
         /^@radix-ui\//,
         /^@dnd-kit\//,
+        /^@tanstack\//,
         'clsx',
         'tailwind-merge',
         'lucide-react',

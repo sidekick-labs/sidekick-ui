@@ -153,12 +153,11 @@ if [[ "$REBASE_HAPPENED" == "true" ]]; then
   fi
 
   if [[ "$IS_GH_PR_CREATE" == "true" ]]; then
-    echo "🔄 Force-pushing rebased branch before PR creation..." >&2
-    if ! git push --force-with-lease origin "$CURRENT_BRANCH" >&2; then
-      echo "❌ Force push failed after rebase. Cannot create PR." >&2
-      exit 2
-    fi
-    echo "✅ Branch pushed, proceeding with PR creation" >&2
+    # Pushing from inside the hook would bypass the agent's permission
+    # prompt, so block and ask for an explicit push instead.
+    echo "🔄 Rebase changed history. Push the branch first, then retry:" >&2
+    echo "   git push --force-with-lease origin $CURRENT_BRANCH" >&2
+    exit 2
   fi
 fi
 

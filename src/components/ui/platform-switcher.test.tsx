@@ -5,7 +5,21 @@ import { PlatformSwitcher, type LinkedApp, type Organisation } from './platform-
 // @testing-library/react's auto-cleanup only fires when Vitest's `globals`
 // option is enabled. This config keeps Vitest non-global, so an explicit
 // afterEach(cleanup) is required to unmount between tests.
-afterEach(cleanup)
+//
+// Reset focus after unmounting. Since jsdom 30.1, removing the focused element
+// leaves the *document* as the focused area; the next element.focus() then
+// fires a window `blur`, and Radix Menu closes itself on it — so every menu
+// opened after the first in this file would shut immediately. Focusing and
+// blurring a throwaway element here (with no menu mounted) spends that stray
+// window blur harmlessly and returns focus to <body> the normal way.
+afterEach(() => {
+  cleanup()
+  const sink = document.createElement('button')
+  document.body.appendChild(sink)
+  sink.focus()
+  sink.blur()
+  sink.remove()
+})
 
 const Icon = () => <span data-testid="brand-icon">B</span>
 

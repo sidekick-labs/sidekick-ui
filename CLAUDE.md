@@ -96,13 +96,18 @@ Decision rule: [`storybook-frontend-only-catalog.md`](https://github.com/sidekic
 
 ## Publishing
 
-Published to npm (`registry.npmjs.org`) as a public package via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`.
+Releases are **tag-driven**: a dedicated `chore: release vX.Y.Z` PR (version + `CHANGELOG.md`), then a
+signed `v*` tag → `release.yml` → GitHub Release → `publish.yml` → npm. Never bump the version in a
+feature PR. `release.yml` must create the Release with the `sidekick-labs-bot` **GitHub App token**,
+not `GITHUB_TOKEN`, or npm auto-publish silently stops. Wiring and history: [`RELEASING.md`](RELEASING.md).
 
-The chain is: **push a `v*` tag → `release.yml` creates the GitHub Release → the `release: published` event triggers `publish.yml` → npm.**
+## Read when relevant
 
-For that chain to hold, `release.yml` must create the Release with a **GitHub App installation token**, not `secrets.GITHUB_TOKEN` — GitHub deliberately suppresses workflow triggers for events created by `GITHUB_TOKEN`. `release.yml` mints one from the `sidekick-labs-bot` App via `actions/create-github-app-token` (`vars.SIDEKICK_RELEASE_BOT_APP_ID` + `secrets.SIDEKICK_RELEASE_BOT_PRIVATE_KEY`, both org-level). If you ever change that token back, auto-publish silently stops — the tag and the Release still appear, only npm goes stale. That is exactly what happened to v0.7.1 and v0.8.0, which both had to be published by a manual `workflow_dispatch`.
-
-The publish job runs in the `npm` GitHub Environment (deployment-branch-policy: `main` branch + `v*` tags). npm Trusted Publishing is configured on the npmjs.com side (publisher: GitHub Actions, repo: `sidekick-ui`, workflow: `publish.yml`, environment: `npm`), so the OIDC `id-token: write` permission lets CI publish without any token (requires npm ≥ 11.5.1 on the runner). `secrets.NPM_TOKEN` remains only as a fallback.
+| Doc                                                                      | Read when                                                           |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| [`RELEASING.md`](RELEASING.md)                                           | Cutting a release, or touching `release.yml` / `publish.yml`        |
+| [`CHANGELOG.md`](CHANGELOG.md)                                           | Adding a user-visible change (log it under `[Unreleased]`)          |
+| [`.claude/skills/storybook/SKILL.md`](.claude/skills/storybook/SKILL.md) | Writing stories, or fixing a visual-regression or a11y gate failure |
 
 ## Workspace rules
 

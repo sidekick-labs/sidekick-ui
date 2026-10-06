@@ -1,0 +1,20 @@
+name: Docs Drift Report
+
+# Weekly, REPORT-ONLY companion to docs-hygiene.yml (sidekick-labs/.github#201):
+# lists living docs whose `covers:` paths gained commits after their `verified:`
+# date. Never fails on findings; the step summary is the report. It does fail
+# when it cannot tell (shallow clone) or its self-test can no longer go red.
+# Convention: https://github.com/sidekick-labs/octo-brain/blob/main/.claude/conventions/docs-shape.md
+
+on:
+  schedule:
+    - cron: '43 1 * * 1' # weekly, Monday 01:43 UTC (minute staggered per repo)
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  docs-drift:
+    permissions:
+      contents: read
+    uses: sidekick-labs/.github/.github/workflows/docs-hygiene-drift.yml@main

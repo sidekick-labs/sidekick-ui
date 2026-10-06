@@ -18,3 +18,8 @@ jobs:
     permissions:
       contents: read
     uses: sidekick-labs/.github/.github/workflows/docs-hygiene-drift.yml@main
+    with:
+      # Files/refreshes one docs-drift issue in the owning brain (docs-shape rule 5).
+      brain-repo: sidekick-labs/core-platform-brain
+    # SIDEKICK_RELEASE_BOT_PRIVATE_KEY mints the brain-scoped issues token.
+    secrets: inherit

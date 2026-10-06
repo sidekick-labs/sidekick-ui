@@ -7,7 +7,7 @@ This document describes the release process for `@sidekick-labs/ui`.
 Releases follow a **tag-driven** workflow:
 
 ```
-Release PR (version bump + changelog) → merge → push tag → release.yml creates GitHub Release → publish.yml publishes to GitHub Packages
+Release PR (version bump + changelog) → merge → push tag → release.yml creates GitHub Release → publish.yml publishes to npm
 ```
 
 Two GitHub Actions workflows chain together:
@@ -69,13 +69,23 @@ git push origin vX.Y.Z
 This triggers the automation:
 
 1. `release.yml` validates the tag matches `package.json`, extracts the changelog section, and creates a GitHub Release
-2. The GitHub Release creation triggers `publish.yml`, which builds and publishes to GitHub Packages
+2. The GitHub Release creation triggers `publish.yml`, which builds and publishes to npm (`registry.npmjs.org`)
 
 ### 4. Verify
 
 - Check the [Actions tab](https://github.com/sidekick-labs/sidekick-ui/actions) for both workflow runs
 - Confirm the [GitHub Release](https://github.com/sidekick-labs/sidekick-ui/releases) has the correct changelog body
 - Verify the package is available: `npm view @sidekick-labs/ui@X.Y.Z`
+
+## How publishing is wired
+
+Published to npm (`registry.npmjs.org`) as a public package via the `publish.yml` GitHub Actions workflow. Version is managed manually in `package.json`.
+
+The chain is: **push a `v*` tag → `release.yml` creates the GitHub Release → the `release: published` event triggers `publish.yml` → npm.**
+
+For that chain to hold, `release.yml` must create the Release with a **GitHub App installation token**, not `secrets.GITHUB_TOKEN` — GitHub deliberately suppresses workflow triggers for events created by `GITHUB_TOKEN`. `release.yml` mints one from the `sidekick-labs-bot` App via `actions/create-github-app-token` (`vars.SIDEKICK_RELEASE_BOT_APP_ID` + `secrets.SIDEKICK_RELEASE_BOT_PRIVATE_KEY`, both org-level). If you ever change that token back, auto-publish silently stops — the tag and the Release still appear, only npm goes stale. That is exactly what happened to v0.7.1 and v0.8.0, which both had to be published by a manual `workflow_dispatch`.
+
+The publish job runs in the `npm` GitHub Environment (deployment-branch-policy: `main` branch + `v*` tags). npm Trusted Publishing is configured on the npmjs.com side (publisher: GitHub Actions, repo: `sidekick-ui`, workflow: `publish.yml`, environment: `npm`), so the OIDC `id-token: write` permission lets CI publish without any token (requires npm ≥ 11.5.1 on the runner). `secrets.NPM_TOKEN` remains only as a fallback.
 
 ## Using Claude Code
 

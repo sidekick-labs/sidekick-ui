@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-07
+
 ### Added
 
 - **`DataTableView` — a behaviour layer over the `DataTable` styling primitives, backed by `@tanstack/react-table` (v8).** Interactive tables get client-side sorting (controlled or uncontrolled), optional global filtering, column definitions, an empty state and row-click handling without reimplementing `useState`/`useMemo` sort logic per page. It composes the existing `DataTable`/`TableHeader`/`TableRow`/`TableHead`/`TableCell` markup — same DOM, same Tailwind classes, same visual-regression baselines — so it is purely additive: the primitives are untouched and remain the right tool for render-only tables.
@@ -16,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   New exports: `DataTableView`, `DataTableViewProps`, and the TanStack helpers/types consumers need to build columns without importing `@tanstack/react-table` directly — `createColumnHelper`, `flexRender`, and the types `ColumnDef`, `SortingState`, `OnChangeFn`, `Row`, `TanStackTable`. `@tanstack/react-table` is a new runtime dependency, externalized from the bundle (consumers receive it transitively) — `dist/index.js` inlines none of its internals.
 
   Adopted the mature **v8** line deliberately: v9 (2026) is a ground-up rewrite (TanStack Store atom reactivity, feature-composition API, a `useLegacyTable` compat shim), which is more churn than a first low-blast-radius adoption warrants. See `core-platform-brain#514`.
+
+### Changed
+
+- **Runtime dependency floors raised:** `lucide-react` `^1.28.0` → `^1.50.0` and `tailwind-merge` `^3.6.0` → `^3.7.0` (Dependabot). Both are already externalized, so `dist/index.js` is unaffected; consumers resolve them transitively. A consumer pinning `lucide-react` below `^1.50.0` gets a nested copy until it bumps its own range.
+- **The built artifact and export surface are now gated on every PR** (`npm run verify:dist`, plus an `src/index.test.ts` export-surface snapshot), and visual regression is a real gate with 33/33 component coverage. CI-only; no change to the published package.
 
 ## [0.13.0] - 2026-08-05
 
@@ -338,7 +345,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Packages publishing as `@sidekick-labs/ui` (#11)
 - GitHub Actions CI and publish workflows
 
-[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/sidekick-labs/sidekick-ui/compare/v0.9.0...v0.10.0

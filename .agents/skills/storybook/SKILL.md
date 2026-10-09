@@ -1,6 +1,6 @@
 ---
 name: storybook
-description: How to work with the sidekick-ui Storybook component catalog and its two automated UI gates — visual regression (Playwright pixel-diff) and the story-test gate (render + interaction + axe a11y, via @storybook/addon-vitest). sidekick-ui is the home of the shared UI components and the estate's visual-regression baselines. Invoke when working on Storybook, adding a story, the a11y gate, per-story scope-disable, or fixing contrast/token violations. Triggers: storybook, add a story, a11y, visual regression.
+description: "How to work with the sidekick-ui Storybook component catalog and its two automated UI gates — visual regression (Playwright pixel-diff) and the story-test gate (render + interaction + axe a11y, via @storybook/addon-vitest). sidekick-ui is the home of the shared UI components and the estate's visual-regression baselines. Invoke when working on Storybook, adding a story, the a11y gate, per-story scope-disable, or fixing contrast/token violations. Triggers: storybook, add a story, a11y, visual regression."
 ---
 
 ## Storybook & CI

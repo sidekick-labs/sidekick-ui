@@ -30,4 +30,4 @@ jobs:
     permissions:
       contents: read
     with:
-      exceptions: ""
+      exceptions: ''

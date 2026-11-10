@@ -20,13 +20,19 @@ on:
       - '**/Gemfile.lock'
       - '**/uv.lock'
       - '**/requirements*.lock'
+      - '.github/workflows/license-check.yml'
+  # Weekly, so a dependency relicensed upstream surfaces without a lockfile change.
+  # Monday 05:37 UTC, ahead of sre-brain's compliance watch (06:17), whose check (h)
+  # reads this workflow's latest main run and its licence-check-counts artifact.
+  schedule:
+    - cron: '37 5 * * 1'
   workflow_dispatch:
 
 permissions: {}
 
 jobs:
   license-check:
-    uses: sidekick-labs/.github/.github/workflows/license-check.yml@88e0087cef47d7df51afe4b586a7ff74901c05d5 # main (sidekick-labs/.github#225)
+    uses: sidekick-labs/.github/.github/workflows/license-check.yml@255f5564df38eb43c2735266543743fe623a7d47 # main (sidekick-labs/.github#227)
     permissions:
       contents: read
     with:

@@ -6,13 +6,9 @@ name: License Check
 # Licence audit 2026-11-10 follow-up. Pinned to the merge commit of
 # sidekick-labs/.github#225 on main.
 on:
+  # Every PR, so the check can be required; the reusable job skips itself in
+  # seconds when the PR changes no lockfile (sidekick-labs/.github, ci/licence-check-always-report).
   pull_request:
-    paths:
-      - '**/package-lock.json'
-      - '**/Gemfile.lock'
-      - '**/uv.lock'
-      - '**/requirements*.lock'
-      - '.github/workflows/license-check.yml'
   push:
     branches: [main]
     paths:
@@ -32,7 +28,7 @@ permissions: {}
 
 jobs:
   license-check:
-    uses: sidekick-labs/.github/.github/workflows/license-check.yml@255f5564df38eb43c2735266543743fe623a7d47 # main (sidekick-labs/.github#227)
+    uses: sidekick-labs/.github/.github/workflows/license-check.yml@0d61c8d200f083fbd386462e595ec162854ace46 # ci/licence-check-always-report (draft; re-pin to the merge commit at land)
     permissions:
       contents: read
     with:

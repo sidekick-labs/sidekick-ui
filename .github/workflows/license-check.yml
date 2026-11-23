@@ -32,7 +32,7 @@ permissions: {}
 
 jobs:
   license-check:
-    uses: sidekick-labs/.github/.github/workflows/license-check.yml@0768f6156f18a4704360a024135ec91460fa88de # main (sidekick-labs/.github#227)
+    uses: sidekick-labs/.github/.github/workflows/license-check.yml@41fec9b325a4b1ecf89889cd2ccf6b1e9f884d38 # main (sidekick-labs/.github#227)
     permissions:
       contents: read
     with:

@@ -5,7 +5,7 @@ targets = ["claude"]
 
 [estate]
 repo = "rarebit-one/agent-estate"
-sha = "0f55fabec0ad78a7fe3866e0b35650f7a1e3bfca"
+sha = "e23f61311ccd68e34a4aa7a412184be90d66ff97"
 
 [vendored]
 "enforce-signed-commits" = "sha256:c7bc4295c9f0a2a693523c5a22345396782a4080b0a0ce77920f6bc24aa4d9b3"

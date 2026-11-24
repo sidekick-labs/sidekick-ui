@@ -1322,6 +1322,187 @@ check block "pushd \"\$N\" (N=-n) may edit the stack: later popd unknown, from a
 # Codex round 28 on #81.
 check allow "declare +i D removes an attribute, from a worktree" "$WT" \
   "declare +i D; D=/tmp; printf x > \"\$D/out.txt\""
+# cd -P / physical mode resolve .. through symlinks.
+mkdir -p "$SCRATCH/w"; ln -sfn "$MAIN/sub" "$SCRATCH/w/link" 2>/dev/null; mkdir -p "$MAIN/sub"
+check block "cd -P link/.. lands in the symlink target's parent (main), from scratch" "$SCRATCH/w" \
+  "cd -P link/..; printf x > file.txt"
+check block "set -P then cd link/.. lands in main, from scratch" "$SCRATCH/w" \
+  "set -P; cd link/..; printf x > file.txt"
+check allow "cd link/.. (logical) stays in scratch, from scratch" "$SCRATCH/w" \
+  "cd link/..; printf x > out.txt"
+
+# Codex review on ready, round 29 (#81).
+check allow "declare -ip D only displays, from a worktree" "$WT" \
+  "D=/tmp; declare -ip D; D=/tmp; printf x > \"\$D/out.txt\""
+check block "declare -i D (not print-only) still transforms, from a worktree" "$WT" \
+  "declare -l D; D=$TMP/REPO; printf x > \"\$D/file.txt\""
+
+# Codex round 1 on #82.
+check block "declare -l D -p: -p after an operand is not an option, from a worktree" "$WT" \
+  "declare -l D -p; D=$TMP/REPO; printf x > \"\$D/file.txt\""
+check allow "(set -P) does not reach the parent, from scratch" "$SCRATCH/w" \
+  "(set -P); cd link/..; printf x > out.txt"
+check allow "bash -c 'set -P' does not reach the parent, from scratch" "$SCRATCH/w" \
+  "bash -c 'set -P'; cd link/..; printf x > out.txt"
+
+check allow "an EXIT trap's set -P does not apply mid-line, from scratch" "$SCRATCH/w" \
+  "trap 'set -P' EXIT; cd link/..; printf x > out.txt"
+check block "a DEBUG trap's set -P may apply mid-line, from scratch" "$SCRATCH/w" \
+  "trap 'set -P' DEBUG; cd link/..; printf x > file.txt"
+
+# Codex round 2 on #82.
+check allow "set +P / set +o physical turn physical mode off, from scratch" "$SCRATCH/w" \
+  "set +P; set +o physical; cd link/..; printf x > out.txt"
+check block "set -o physical turns it on, from scratch" "$SCRATCH/w" \
+  "set -o physical; cd link/..; printf x > file.txt"
+
+# Codex round 3 on #82.
+check allow "set -P does not reach a new bash -c (SHELLOPTS not exported), from scratch" "$SCRATCH/w" \
+  "set -P; bash -c 'cd link/..; printf x > out.txt'"
+check block "bash -P -c: the child is physical, from scratch" "$SCRATCH/w" \
+  "bash -P -c 'cd link/..; printf x > file.txt'"
+check block "export SHELLOPTS: the child may be physical, from scratch" "$SCRATCH/w" \
+  "set -P; export SHELLOPTS; bash -c 'cd link/..; printf x > file.txt'"
+
+# Codex round 4 on #82: a logical cd drops .. textually before a later cd -P.
+ln -sfn "$SCRATCH" "$MAIN/link2" 2>/dev/null
+check block "cd -L MAIN/link/..; cd -P . lands in main, from scratch" "$SCRATCH" \
+  "cd -L $MAIN/link2/..; cd -P .; printf x > file.txt"
+check allow "cd -L MAIN/link/.. … then cd /tmp, from main" "$MAIN" \
+  "cd -L $MAIN/link2/..; cd /tmp; printf x > out.txt"
+
+# The kernel resolves a write's .. through symlinks.
+check block "printf x > link/../f writes into the symlink target's parent (main), from scratch" "$SCRATCH/w" \
+  "printf x > link/../file.txt"
+check allow "printf x > repo/link2/../f lands beside scratch (link2 -> scratch), not in main" "$TMP" \
+  "printf x > repo/link2/../out.txt"
+
+# Codex round 5 on #82.
+check block "cd -L SCRATCH/missing/.. fails (bash refuses it), from main" "$MAIN" \
+  "cd -L $SCRATCH/missing/..; printf x > out.txt"
+check block "cd -P SCRATCH/missing/.. fails, from main" "$MAIN" \
+  "cd -P $SCRATCH/missing/..; printf x > out.txt"
+check allow "mkdir -p SCRATCH/new; cd SCRATCH/new/.. works, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/new2; cd $SCRATCH/new2/..; printf x > out.txt"
+check block "mkdir SCRATCH/x does not make SCRATCH/missing/.. reachable, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/x3; cd $SCRATCH/missing/..; printf x > out.txt"
+check allow "mkdir -p then cd into it still works, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/x4/y; cd $SCRATCH/x4/y; printf x > out.txt"
+
+# Codex round 6 on #82: a logical cd falls back to the physical path.
+mkdir -p "$MAIN/dest6"
+check block "cd -L link/../dest falls back to the physical target (main), from scratch" "$SCRATCH/w" \
+  "cd -L $SCRATCH/w/link/../dest6; printf x > out.txt"
+
+# Codex round 7 on #82.
+mkdir -p "$SCRATCH/safe" "$TMP/nl"; mkdir -p "$SCRATCH/safe
+x"; ln -sfn "$MAIN" "$SCRATCH/safe
+x/m" 2>/dev/null
+check block "a directory name with a newline is not truncated, from a worktree" "$WT" \
+  "cd '$SCRATCH/safe
+x/m'; printf x > file.txt"
+check allow "set -P; set +P turns physical mode off again, from scratch" "$SCRATCH/w" \
+  "set -P; set +P; cd link/..; printf x > out.txt"
+check block "set -P; false && set +P keeps it possibly on, from scratch" "$SCRATCH/w" \
+  "set -P; false && set +P; cd link/..; printf x > file.txt"
+
+# Codex round 8 on #82.
+mkdir -p "$SCRATCH/sub8"
+check block "cd -L SCRATCH/sub/../missing/.. fails (a later component is missing), from main" "$MAIN" \
+  "cd -L $SCRATCH/sub8/../missing/..; printf x > out.txt"
+mkdir -p "$SCRATCH/safe8"; ln -sfn "$MAIN" "$SCRATCH/safe8
+" 2>/dev/null
+check block "cd -P to a name ending in a newline is not truncated, from a worktree" "$WT" \
+  "cd -P '$SCRATCH/safe8
+'; printf x > file.txt"
+
+# Codex round 9 on #82: a missing intermediate logical component falls back to physical.
+mkdir -p "$MAIN/foo9"
+check block "cd -L link/../foo/.. falls back physically into main, from scratch" "$SCRATCH/w" \
+  "cd -L $SCRATCH/w/link/../foo9/..; printf x > probe.txt"
+check allow "cd -L link/.. stays logical (in scratch), from scratch" "$SCRATCH/w" \
+  "cd -L $SCRATCH/w/link/..; printf x > out.txt"
+
+# Codex round 10 on #82.
+check allow "bash -P +P -c / bash -o physical +o physical -c end logical, from scratch" "$SCRATCH/w" \
+  "bash -P +P -c 'cd link/..; printf x > out.txt'; bash -o physical +o physical -c 'cd link/..; printf x > out.txt'"
+check allow "export SHELLOPTS inside a subshell does not reach a later child, from scratch" "$SCRATCH/w" \
+  "(set -P; export SHELLOPTS); bash -c 'cd link/..; printf x > out.txt'"
+
+# Codex round 11 on #82.
+check allow "mkdir -p SCRATCH/./new; cd SCRATCH/./new, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/./new11; cd $SCRATCH/./new11; printf x > out.txt"
+
+# Codex round 12 on #82.
+check block "mkdir -p link/../new does not make SCRATCH/new reachable, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/w/link/../new12; cd $SCRATCH/w/new12; printf x > out.txt"
+
+# mkdir: without -p a missing parent fails; conditional or relative-to-unknown mkdir is not counted.
+check block "mkdir SCRATCH/x/y without -p fails when x is missing, from main" "$MAIN" \
+  "mkdir $SCRATCH/nx13/y; cd $SCRATCH/nx13; printf x > out.txt"
+check block "false && mkdir DIR; cd DIR: the mkdir may not run, from main" "$MAIN" \
+  "false && mkdir $SCRATCH/c13; cd $SCRATCH/c13; printf x > out.txt"
+check block "mkdir new after an unresolved cd is not new under the old cwd, from scratch" "$SCRATCH" \
+  "cd \"\$D\"; mkdir r13; cd $SCRATCH/r13; printf x > out.txt"
+check allow "mkdir -p DIR && cd DIR && write, from main" "$MAIN" \
+  "mkdir -p $SCRATCH/ok13/a && cd $SCRATCH/ok13/a && printf x > out.txt"
+
+# 084c604 regressions (director brief, 24 Nov): parser confusion must never
+# switch the guard off. Every older copy blocked these.
+check block "\$(case x in (x) write;; esac), from main" "$MAIN" \
+  'echo "$(case x in (x) printf x > probe;; esac)"'
+check block "\$(case x in x) write;; esac) (unparenthesised pattern), from main" "$MAIN" \
+  'echo "$(case x in x) printf x > probe;; esac)"'
+check block "(case x in (x) cd /tmp;; esac); write: the cd stays in the subshell, from main" "$MAIN" \
+  '(case x in (x) cd /tmp;; esac); printf x > file.txt'
+check block "(case x in x) cd /tmp;; esac); write, from main" "$MAIN" \
+  '(case x in x) cd /tmp;; esac); printf x > file.txt'
+check block "case x in esac; printf: an empty case does not swallow the next command, from main" "$MAIN" \
+  'case x in esac; printf x > file.txt'
+check block "case x in esac; echo bad > file, from main" "$MAIN" \
+  'case x in esac; echo bad > file.txt'
+check block "case x in esac (newline), then a write, from main" "$MAIN" \
+  'case x in esac
+printf x > file.txt'
+check block "case x in esac; cp into main, from scratch" "$SCRATCH" \
+  "case x in esac; cp $SCRATCH/a.txt $MAIN/x.txt"
+check block "case x in esac; sed -i, from main" "$MAIN" \
+  'case x in esac; sed -i s/a/b/ file.txt'
+check block "a case item ending in ; && is not a pattern: the write is judged, from main" "$MAIN" \
+  'case x in x) true;; y) false;; esac && printf x > file.txt'
+check block "nested: \$( ( case x in (x) cd /tmp;; esac ); write ), from main" "$MAIN" \
+  'echo "$( (case x in (x) cd /tmp;; esac); printf x > probe )"'
+check block "nested: ( \$(case …) ; cd /tmp in a pattern body ) then write, from main" "$MAIN" \
+  '( x=$(case y in y) echo;; esac); case x in (x) cd /tmp;; esac ); printf x > file.txt'
+check block "case pattern ) inside backticks, from main" "$MAIN" \
+  'echo `case x in x) printf x > probe;; esac`'
+check block "\$(case …) whose item cps into main, from scratch" "$SCRATCH" \
+  "echo \"\$(case x in x) cp $SCRATCH/a.txt $MAIN/x.txt;; esac)\""
+check block "\$(case …) whose item runs sed -i on a main file, from scratch" "$SCRATCH" \
+  "echo \"\$(case x in (x) sed -i s/a/b/ $MAIN/file.txt;; esac)\""
+check block "an unclosed case in \$( … ) fails closed, from main" "$MAIN" \
+  'echo "$(case x in x) echo)"; printf x > /tmp/ok.txt'
+check block "D=<main>; cd \"\$D\"; printf x > '~missinguser' (a relative name), from a worktree" "$WT" \
+  "D=$MAIN; cd \"\$D\"; printf x > '~missinguser'"
+check block "D=<main>; cd \"\$D\"; printf x > ~missinguser (unresolved ~user stays relative), from a worktree" "$WT" \
+  "D=$MAIN; cd \"\$D\"; printf x > ~missinguser"
+check block "D=<main>; cd \"\$D\"; cp f '~/x' (quoted ~ is a relative dir), from a worktree" "$WT" \
+  "D=$MAIN; cd \"\$D\"; cp /tmp/a.txt '~/x'"
+check block "printf x > '~/x' from main writes main/~/x (quoted ~ is literal)" "$MAIN" \
+  "printf x > '~/x'"
+mkdir -p "$SCRATCH/qt"; ln -sfn "$MAIN" "$SCRATCH/qt/~"
+check block "printf x > '~/f' where ./~ links to main, from outside a repo (Codex round 13 on #82)" "$SCRATCH/qt" \
+  "printf x > '~/probe.txt'"
+check allow "printf x > '~/f' where ./~ is a plain scratch dir, from a worktree" "$WT" \
+  "mkdir -p '~'; printf x > '~/probe.txt'"
+check block "printf x > \\~/x from main (escaped ~ is literal)" "$MAIN" \
+  'printf x > \~/x'
+HOME="$SCRATCH" check allow "unquoted ~/x after an unresolved cd is still absolute, from a worktree" "$WT" \
+  'cd "$D"; printf x > ~/out.txt'
+check allow "case with items and a write elsewhere, from main" "$MAIN" \
+  "case x in x) echo hi;; esac; printf x > $SCRATCH/out.txt"
+check allow "\$(case …) with no write, then an absolute write, from main" "$MAIN" \
+  "v=\"\$(case x in (x) echo a;; esac)\"; printf '%s' \"\$v\" > $SCRATCH/out.txt"
 
 # The last member of a pipeline may run in this shell: fail closed.
 check allow "a cd before a | is a child shell, from a worktree" "$WT" \

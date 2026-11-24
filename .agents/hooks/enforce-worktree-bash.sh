@@ -167,6 +167,7 @@ shopt -u patsub_replacement 2>/dev/null || true
 LITD='${__literal_dollar__}'     # a `$` that was quoted or escaped: a literal $
 QMARK='${__quoted_string__}'     # after a $'…' or $"…" string (decoded in full)
 QLOST='${__undecoded_escape__}'  # a $'…' escape left undecoded; the rest of it is lost
+QTILDE='${__quoted_tilde__}'     # before a quoted / escaped leading ~ ('~/x'): never tilde-expanded
 BQ=0             # >0 while lexing inside backticks, where \$ is NOT literal
 
 # The line does something this guard cannot follow (eval, readonly, a function
@@ -188,11 +189,16 @@ _expand_path() { # $1 -> RET (expanded), RETUNRES=1 when it cannot be resolved
   local p="$1"
   RETUNRES=0
   RETDANGER=0
-  case "$p" in
-    '~'|'~/'*)
-      if _home; then p="$RET${p#\~}"; else RETUNRES=1; fi ;;
-    '~'*) RETUNRES=1 ;;   # ~otheruser, ~+, ~- — cannot resolve
-  esac
+  if [[ "$p" == "$QTILDE"* ]]; then
+    # A quoted leading ~ ('~/x'): a literal path component, never HOME.
+    p="${p#"$QTILDE"}"
+  else
+    case "$p" in
+      '~'|'~/'*)
+        if _home; then p="$RET${p#\~}"; else RETUNRES=1; fi ;;
+      '~'*) RETUNRES=1 ;;   # ~otheruser, ~+, ~- — cannot resolve
+    esac
+  fi
   case "$p" in *'$'*) _subst_vars "$p"; p="$RET" ;; esac
   case "$p" in *'$'*) RETUNRES=1 ;; esac
   RET="$p"
@@ -268,8 +274,13 @@ CTRL_STK=()   # per open compound: "<1 when it opened after a |>:<if|loop|case|b
 CASE_PAT=0    # the next simple command is a case pattern list (after `case … in` or ;;);
               # 2 after a leading `(`, where even esac is a pattern
 CASE_OPENED=0 # the command just inspected was `case WORD in …`
+LX_CPAREN=0   # the command being lexed is `case WORD in (` (its first pattern follows)
 CTRL_SNAP=()  # per open compound: the directory state and bindings it opened with
 IC_OPENED=0   # the command being inspected opened a compound ({ cd x; … } | …)
+PHYS=0        # set -P / set -o physical may be on: cd resolves .. through symlinks
+PHYS_ENV=0    # physical comes in through an exported SHELLOPTS (a new shell inherits it)
+case ":${SHELLOPTS:-}:" in *:physical:*) PHYS=1; PHYS_ENV=1 ;; esac
+SHOPTS_TAINT=0 # SHELLOPTS is mentioned on this line (export SHELLOPTS, …)
 CD_COUNT=0    # bumped by every directory change that persists in the shell being modelled
               # (put back, like the directory, on leaving a subshell / bash -c / child compound)
 LX_TERM=seq   # what ends the command being inspected: seq|and|or|pipe|bg
@@ -407,7 +418,7 @@ _fn_taint() {
 _script_text() { # $1 lexed word -> RET: the text eval / bash -c / trap re-parse
   local s="$1" d='$'
   if [[ "$s" == *"$QLOST"* ]]; then PARSE_ERROR=1; s="${s//"$QLOST"/}"; fi
-  s="${s//"$QMARK"/}"
+  s="${s//"$QMARK"/}"; s="${s//"$QTILDE"/\\}"
   RET="${s//"$LITD"/$d}"
 }
 
@@ -416,25 +427,31 @@ _script_text() { # $1 lexed word -> RET: the text eval / bash -c / trap re-parse
 # judged in. Trap handlers are judged again at the end, in the line's final
 # state (an EXIT handler runs then).
 DEFERRED=()
-DEF_DST=0; DEF_OPT=0; DEF_AT=()
+DEF_DST=0; DEF_OPT=0; DEF_AT=(); DEF_PHYS=0; DEF_SOT=0
 _analyze_deferred() { # $1 shell text
   local sdir="$CURDIR" sunres="$DIR_UNRESOLVED" sdanger="$DIR_DANGER" swhy="$DIR_WHY"
   local salt="$DIR_ALT" sguard="$ALT_GUARD" sold="$OLD_CUR"
   local snc="$NEXT_COND" snp="$NEXT_PIPE" stcd="$TILDE_CD"
-  local sdst="$DIRSTK_TAINT" sopt="$OLDPWD_TAINT"
+  local sdst="$DIRSTK_TAINT" sopt="$OLDPWD_TAINT" sphys="$PHYS" ssot="$SHOPTS_TAINT"
   local -a sstk=("${DIRSTK[@]}") svk=("${VAR_K[@]}") svv=("${VAR_V[@]}") sat=("${ATTR_N[@]}")
   # The body starts with the stack / OLDPWD as uncertain as they are now.
   NEXT_PIPE=0; NEXT_COND=0
   _analyze_text "$1"
   # What the body did to the stack / OLDPWD (a mid-line trap applies it).
-  DEF_DST="$DIRSTK_TAINT"; DEF_OPT="$OLDPWD_TAINT"; DEF_AT=("${ATTR_N[@]}")
-  DIRSTK_TAINT="$sdst"; OLDPWD_TAINT="$sopt"; ATTR_N=("${sat[@]}")
+  DEF_DST="$DIRSTK_TAINT"; DEF_OPT="$OLDPWD_TAINT"; DEF_AT=("${ATTR_N[@]}"); DEF_PHYS="$PHYS"; DEF_SOT="$SHOPTS_TAINT"
+  DIRSTK_TAINT="$sdst"; OLDPWD_TAINT="$sopt"; ATTR_N=("${sat[@]}"); PHYS="$sphys"; SHOPTS_TAINT="$ssot"
   TILDE_CD="$stcd"
   CURDIR="$sdir"; DIR_UNRESOLVED="$sunres"; DIR_DANGER="$sdanger"; DIR_WHY="$swhy"
   DIR_ALT="$salt"; ALT_GUARD="$sguard"; OLD_CUR="$sold"
   NEXT_COND="$snc"; NEXT_PIPE="$snp"
   DIRSTK=("${sstk[@]}"); VAR_K=("${svk[@]}"); VAR_V=("${svv[@]}")
   return 0
+}
+
+_was_created_exact() { # $1 absolute path -> 0 when mkdir / git worktree add made exactly it
+  local c
+  for c in "${CREATED[@]}"; do [[ "$c" == "$1" ]] && return 0; done
+  return 1
 }
 
 _was_created() { # $1 absolute path -> 0 when mkdir / git worktree add made it (or below it)
@@ -545,6 +562,7 @@ _poison_mentions() { # $@ words
     # (OLDPWD=…, DIRSTACK[1]=…, read OLDPWD, …) sends them anywhere.
     [[ "$wd" == *OLDPWD* ]] && OLDPWD_TAINT=1
     [[ "$wd" == *DIRSTACK* ]] && DIRSTK_TAINT=1
+    [[ "$wd" == *SHELLOPTS* ]] && SHOPTS_TAINT=1
     # A bare HOME (HOME=…, read HOME, printf -v HOME, …), not a $HOME read:
     # ~ and $HOME may no longer hold the inherited value.
     hw="${wd//\$\{HOME/}"; hw="${hw//\$HOME/}"
@@ -662,10 +680,13 @@ _is_main_checkout() { # $1 dir -> 0 when it is a MAIN checkout
     fi
   done
   local val=0
-  gd=$(cd "$d" 2>/dev/null && git rev-parse --git-dir 2>/dev/null)
+  # Physically, as the kernel resolves a write's path: <dir>/link/../f is in
+  # link's target's parent. (The modelled cwd is kept logical-normalised, so
+  # resolving it physically finds the directory bash is really in.)
+  gd=$(cd -P "$d" 2>/dev/null && git rev-parse --git-dir 2>/dev/null)
   if [[ -n "$gd" ]]; then
     if [[ "$gd" != /* ]]; then
-      gd=$(cd "$d" 2>/dev/null && cd "$gd" 2>/dev/null && pwd)
+      gd=$(cd -P "$d" 2>/dev/null && cd -P "$gd" 2>/dev/null && pwd -P)
     fi
     if [[ -n "$gd" && "$gd" != *".git/worktrees/"* ]]; then
       val=1
@@ -699,7 +720,7 @@ _block() { # $1 what, $2 where, [$3 kind: nonliteral]
 
 _shown() { # $1 text -> RET with the lexer's placeholders written back as shell text
   local s="$1" lit='\$'
-  s="${s//"$LITD"/$lit}"; s="${s//"$QLOST"/…}"; s="${s//"$QMARK"/}"
+  s="${s//"$LITD"/$lit}"; s="${s//"$QLOST"/…}"; s="${s//"$QMARK"/}"; s="${s//"$QTILDE"/\\}"
   RET="${s//"$CMDSUB"/\$(…)}"
 }
 
@@ -965,9 +986,11 @@ _check_dest() { # $1 destination, $2 kind: redir | remote | (empty: a file argum
   # After a cd this guard cannot resolve, the working directory is unknown: a
   # destination that is (or may be) relative blocks wherever the line runs.
   # One that resolves to an absolute or ~ path does not depend on it.
+  # ('~x' quoted, or ~user that does not resolve, is a relative name: only an
+  # absolute destination is independent of the working directory.)
   if [[ "$DIR_UNRESOLVED" == "1" ]]; then
     case "$RET" in
-      /*|'~'*) ;;
+      /*) ;;
       *) _block "relative write to '$raw' after $DIR_WHY" "$CURDIR" unresolved
          return 0 ;;
     esac
@@ -1132,10 +1155,65 @@ _dir_lost() { # $1 why
   return 0
 }
 
+# A logical cd (the default, -L) drops . and .. textually before following
+# symlinks: /repo/link/.. is /repo, whatever link points to.
+_lexnorm() { # $1 absolute path -> RET
+  local -a parts=() out=()
+  local part n rest="$1/"
+  # Split on / by hand: read would stop at a newline inside a name.
+  while [[ -n "$rest" ]]; do parts+=("${rest%%/*}"); rest="${rest#*/}"; done
+  for part in "${parts[@]}"; do
+    case "$part" in
+      ''|.) ;;
+      ..) n=${#out[@]}; (( n > 0 )) && unset "out[$((n - 1))]"; out=("${out[@]}") ;;
+      *) out+=("$part") ;;
+    esac
+  done
+  RET=""
+  for part in "${out[@]}"; do RET="$RET/$part"; done
+  [[ -z "$RET" ]] && RET=/
+  return 0
+}
+
+# Remember a directory mkdir / git worktree add makes. . and // are dropped
+# (exact); a path with .. is not recorded at all: the kernel resolves .. through
+# symlinks (mkdir -p <x>/link/../new makes it beside link's target), so a later
+# cd to its lexical spelling stays a cd that may fail.
+_record_created() { # $1 absolute path
+  case "$1/" in */../*) return 0 ;; esac
+  _lexnorm "$1"; CREATED+=("$RET")
+  return 0
+}
+
+# The physical directory a path resolves to (RET; empty when it does not).
+# A sentinel keeps trailing newlines that $(…) would strip from a name.
+_phys() { # $1 path, $2 L to resolve it logically first
+  local opt=-P
+  [[ "${2:-}" == L ]] && opt=-L
+  RET=$(cd "$opt" -- "$1" 2>/dev/null && pwd -P && echo .) || { RET=""; return 0; }
+  RET="${RET%.}"; RET="${RET%$'\n'}"
+  return 0
+}
+
+# A logical cd succeeds only if every prefix before a .., normalised, is a
+# directory (bash's check), or was made by mkdir / git worktree add on this line.
+_walk_ok() { # $1 absolute path as written
+  local rest="$1/" comp cur=""
+  while [[ -n "$rest" ]]; do
+    comp="${rest%%/*}"; rest="${rest#*/}"
+    if [[ "$comp" == .. ]]; then
+      _lexnorm "${cur:-/}"
+      [[ -d "$RET" ]] || _was_created "$RET" || return 1
+    fi
+    [[ -n "$comp" ]] && cur="$cur/$comp"
+  done
+  return 0
+}
+
 # Change the modelled working directory the way `cd <target>` / `pushd <target>`
 # would. The caller has already refused computed targets (_dir_unknown).
-_cd_to() { # $1 target word (literal)
-  local target="$1" old="$CURDIR" oldun="$DIR_UNRESOLVED" olddg="$DIR_DANGER" prevold="$OLD_CUR"
+_cd_to() { # $1 target word (literal), $2 L / P (cd -L / -P) or empty
+  local mode="${2:-}" target="$1" old="$CURDIR" oldun="$DIR_UNRESOLVED" olddg="$DIR_DANGER" prevold="$OLD_CUR"
   CD_COUNT=$((CD_COUNT + 1))
   local e unres p viacdp="" cdp known ent maybe=0
   local -a ents
@@ -1164,7 +1242,9 @@ _cd_to() { # $1 target word (literal)
     if (( ! known )); then
       _dir_unknown "cd '$target' (CDPATH may have changed on this line)"; return 0
     elif [[ -n "$cdp" ]]; then
-      IFS=: read -r -a ents <<< "$cdp"
+      # Split on : by hand (read would stop at a newline inside an entry).
+      local crest="$cdp:"; ents=()
+      while [[ -n "$crest" ]]; do ents+=("${crest%%:*}"); crest="${crest#*:}"; done
       for ent in "${ents[@]}"; do
         [[ -z "$ent" ]] && ent="$CURDIR"
         [[ "$ent" != /* ]] && ent="$CURDIR/$ent"
@@ -1174,7 +1254,43 @@ _cd_to() { # $1 target word (literal)
   fi
   if [[ "$unres" == "1" ]]; then _dir_unknown "cd '$target'"; return 0; fi
   if [[ -n "$viacdp" ]]; then p="$viacdp"; else p="$e"; [[ "$p" != /* ]] && p="$CURDIR/$p"; fi
-  if (( ! maybe )) && { [[ -d "$p" ]] || _was_created "$p"; }; then
+  # p as written (a physical cd resolves its .. through symlinks); plog the
+  # logical result (.. dropped textually, as cd -L does). CURDIR is always
+  # kept logical-normalised, so either reading starts from the right place.
+  local praw="$p" plog
+  _lexnorm "$p"; plog="$RET"; p="$plog"
+  # cd -P (or physical mode) resolves .. through symlinks: <wt>/link/.. may be
+  # in another checkout. With physical mode merely possible, a target whose
+  # logical and physical readings differ is not followed.
+  if [[ "$mode" == P ]] || { [[ "$mode" != L && "$PHYS" == 1 ]]; }; then
+    local pq lq
+    _phys "$praw"; pq="$RET"
+    if [[ "$mode" == P ]]; then
+      [[ -n "$pq" ]] && p="$pq"
+    else
+      _phys "$plog" L; lq="$RET"
+      if [[ "$pq" != "$lq" ]]; then
+        _dir_unknown "cd '$target' (physical mode may resolve it elsewhere)"; return 0
+      fi
+    fi
+  fi
+  # Whether the cd succeeds, and where it lands, the way bash decides:
+  # - cd -P: the target as written, resolved physically (p is already that);
+  # - cd -L (default): logically when every normalised prefix before a .. is
+  #   a directory and the normalised result is one; otherwise bash falls
+  #   back to chdir() on the target as written, which the kernel resolves
+  #   physically (cd -L <x>/link/../foo/.. can land beside link's target);
+  # - otherwise it fails (cd <x>/missing/..), unless mkdir / git worktree add
+  #   made the directories on this line.
+  local reach=0
+  if [[ "$mode" == P ]]; then
+    if [[ -d "$praw" ]] || _was_created "$p"; then reach=1; fi
+  elif _walk_ok "$praw" && { [[ -d "$p" ]] || _was_created "$p"; }; then
+    reach=1
+  elif [[ -d "$praw" ]]; then
+    _phys "$praw"; [[ -n "$RET" ]] && { p="$RET"; reach=1; }
+  fi
+  if (( ! maybe && reach )); then
     _nearest_dir "$p"; CURDIR="$RET"; DIR_UNRESOLVED=0; DIR_DANGER=0; DIR_WHY=""
     # Only an absolute target settles where we are; a relative one may be
     # relative to DIR_ALT. Settling also ends a dependency on an earlier cd ~
@@ -1277,7 +1393,7 @@ _inspect_cmd() {
 
   # Shell-state taints a mention sets; put back below if the command turns out
   # to run in a child (before a | or &, after env / sudo / …).
-  local sv_opt="$OLDPWD_TAINT" sv_dst="$DIRSTK_TAINT" sv_cdp="$CDPATH_TAINT" sv_home="$HOME_TAINT"
+  local sv_opt="$OLDPWD_TAINT" sv_dst="$DIRSTK_TAINT" sv_cdp="$CDPATH_TAINT" sv_home="$HOME_TAINT" sv_sot="$SHOPTS_TAINT"
   _poison_mentions "${w[@]}"
 
   # Strip variable assignments and command prefixes (env, sudo, xargs, …).
@@ -1357,7 +1473,7 @@ _inspect_cmd() {
     # Only assignments: in a child (before a | or &, or env X=…), none of
     # them, nor the taints their mention set, reach this shell.
     if [[ "$LX_TERM" == pipe || "$LX_TERM" == bg ]] || (( extprefix )); then
-      OLDPWD_TAINT="$sv_opt"; DIRSTK_TAINT="$sv_dst"; CDPATH_TAINT="$sv_cdp"; HOME_TAINT="$sv_home"
+      OLDPWD_TAINT="$sv_opt"; DIRSTK_TAINT="$sv_dst"; CDPATH_TAINT="$sv_cdp"; HOME_TAINT="$sv_home"; SHOPTS_TAINT="$sv_sot"
     fi
     for ((j = 0; j < n; j++)); do
       [[ "${w[j]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && _assign "${w[j]}" "$mode"
@@ -1385,7 +1501,7 @@ _inspect_cmd() {
   [[ "$name" == */* ]] && child=1
   (( child )) && lastm=0
   if (( child )); then
-    OLDPWD_TAINT="$sv_opt"; DIRSTK_TAINT="$sv_dst"; CDPATH_TAINT="$sv_cdp"; HOME_TAINT="$sv_home"
+    OLDPWD_TAINT="$sv_opt"; DIRSTK_TAINT="$sv_dst"; CDPATH_TAINT="$sv_cdp"; HOME_TAINT="$sv_home"; SHOPTS_TAINT="$sv_sot"
   fi
   IC_CHILD="$child"
 
@@ -1467,6 +1583,12 @@ _inspect_cmd() {
         [[ "$base" != export && "$a" =~ ^-[A-Za-z]*[luciaA] ]] && xattr=1
       done
       (( child )) && xattr=0    # before a | or &: a child shell's attributes
+      # -p only displays (declare -ip D); -f / -F name functions, not variables.
+      # Options end at the first operand or --: `declare -l D -p` is -l.
+      for a in "${args[@]}"; do
+        [[ "$a" == -- || "$a" != [-+]* ]] && break
+        [[ "$a" =~ ^-[A-Za-z]*[pfF] ]] && xattr=0
+      done
       if (( xattr )); then
         for a in "${args[@]}"; do
           [[ "$a" == [-+]* ]] && continue
@@ -1574,6 +1696,8 @@ _inspect_cmd() {
           [[ "$CD_COUNT" != "$cdc" ]] && _dir_lost "trap '${targs[0]}' (its handler changes directory)"
           [[ "$DEF_DST" == 1 ]] && DIRSTK_TAINT=1
           [[ "$DEF_OPT" == 1 ]] && OLDPWD_TAINT=1
+          [[ "$DEF_PHYS" == 1 ]] && PHYS=1
+          [[ "$DEF_SOT" == 1 ]] && SHOPTS_TAINT=1
           for x in "${DEF_AT[@]}"; do
             _var_has_attr "$x" || ATTR_N+=("$x")
             _var_is_danger "$x" || VAR_D+=("$x")
@@ -1592,8 +1716,14 @@ _inspect_cmd() {
         if (( pos )); then _value_risky "$a" && POS_DANGER=1; continue; fi
         case "$a" in
           --|-|+) pos=1 ;;
-          -o|+o) j=$((j + 1)) ;;
+          -o|+o)
+            j=$((j + 1))
+            # -o physical turns it on (+o turns it off); a computed name may be either.
+            { [[ "$a" == -o && "${args[j]:-}" == physical ]] || _nonliteral "${args[j]:-}"; } && PHYS=1
+            [[ "$a" == +o && "${args[j]:-}" == physical ]] && ! _cd_maybe && PHYS=0 ;;
           -*r*) _unmodelled "set -r (restricted mode: cd fails)"; _fn_taint ;;
+          -*P*) PHYS=1 ;;
+          +*P*) _cd_maybe || PHYS=0 ;;   # off, unless it may not run
           [-+]*) : ;;
           *) pos=1; _value_risky "$a" && POS_DANGER=1 ;;
         esac
@@ -1613,8 +1743,14 @@ _inspect_cmd() {
     mkdir)
       # A directory created here makes a later cd into it succeed. From main,
       # any computed argument blocks, as for touch.
-      local skipm=0
+      local skipm=0 mp=0
       for a in "${args[@]}"; do _check_literal "$a"; done
+      for a in "${args[@]}"; do
+        [[ "$a" == --parents || "$a" =~ ^-[A-Za-z]*p ]] && mp=1
+      done
+      # Only a mkdir that certainly runs counts (not after && / || or in an
+      # if / loop), and a relative one only from a known directory.
+      _cd_maybe && return 0
       for a in "${args[@]}"; do
         if (( skipm )); then skipm=0; continue; fi
         case "$a" in
@@ -1622,8 +1758,17 @@ _inspect_cmd() {
           -*) : ;;
           *) _expand_path "$a"
              if [[ "$RETUNRES" == "0" ]]; then
-               x="$RET"; [[ "$x" != /* ]] && x="$CURDIR/$x"
-               CREATED+=("${x%/}")
+               x="$RET"
+               if [[ "$x" != /* ]]; then
+                 [[ "$DIR_UNRESOLVED" == 1 ]] && continue
+                 x="$CURDIR/$x"
+               fi
+               # Without -p, mkdir fails unless the parent exists already.
+               if (( ! mp )); then
+                 _lexnorm "$x/.."
+                 [[ -d "$RET" ]] || _was_created_exact "$RET" || continue
+               fi
+               _record_created "$x"
              fi ;;
         esac
       done
@@ -1695,7 +1840,7 @@ _inspect_cmd() {
     cd|pushd)
       # bash's cd takes -L -P -e -@; pushd takes -n. Option parsing stops at
       # the first operand (or --); every word after that is an operand.
-      local target="" ntgt=0 dashdash=0 bad="" sawopt=0 nocd=0 rot=0
+      local target="" ntgt=0 dashdash=0 bad="" sawopt=0 nocd=0 rot=0 lp=""
       for a in "${args[@]}"; do
         if (( dashdash )); then
           ntgt=$((ntgt + 1)); (( ntgt == 1 )) && target="$a"; continue
@@ -1709,7 +1854,10 @@ _inspect_cmd() {
             else ntgt=1; target="$a"; dashdash=1; fi ;;
           -*)
             sawopt=1
-            if [[ "$base" == cd ]]; then [[ "$a" =~ ^-[LPe@]+$ ]] || bad="$a"
+            if [[ "$base" == cd ]]; then
+              [[ "$a" =~ ^-[LPe@]+$ ]] || bad="$a"
+              # The last of -L / -P wins.
+              local lpx="${a//[^LP]/}"; [[ -n "$lpx" ]] && lp="${lpx: -1}"
             else [[ "$a" =~ ^-n+$ ]] && nocd=1 || bad="$a"; fi ;;
           *) ntgt=1; target="$a"; dashdash=1 ;;
         esac
@@ -1760,7 +1908,7 @@ _inspect_cmd() {
         if [[ "$DIR_UNRESOLVED" == "1" ]]; then DIRSTK+=("?"); else DIRSTK+=("$CURDIR"); fi
         _cd_maybe && DIRSTK_TAINT=1     # it may not run: the stack is uncertain
       fi
-      _cd_to "$target"
+      _cd_to "$target" "$lp"
       return 0 ;;
 
     dirs)
@@ -1837,15 +1985,27 @@ _inspect_cmd() {
       # so its `cd` really does persist.)
       # Find the command string: the first operand after a c option (-c, or a
       # cluster such as -ec). -O / -o / --rcfile take an argument.
-      local cseen=0 sidx=-1 ddash=0 m
+      # A new shell starts logical unless an exported SHELLOPTS or its own
+      # invocation (-P, -o physical) says otherwise.
+      local cseen=0 sidx=-1 ddash=0 m cphys=0 cbase=0
+      [[ "$PHYS_ENV" == 1 || "$SHOPTS_TAINT" == 1 ]] && cbase=1
       for ((j = 0; j < ${#args[@]}; j++)); do
         a="${args[j]}"
         if (( ! ddash )); then
           case "$a" in
-            -O|+O|-o|+o|--rcfile|--init-file) j=$((j + 1)); continue ;;
+            -O|+O|-o|+o|--rcfile|--init-file)
+              j=$((j + 1))
+              # In order: the last of -o / +o physical wins (a computed name may be it).
+              if [[ "$a" == -o ]] && { [[ "${args[j]:-}" == physical ]] || _nonliteral "${args[j]:-}"; }; then cphys=1
+              elif [[ "$a" == +o && "${args[j]:-}" == physical ]]; then cphys=0; fi
+              continue ;;
             --) ddash=1; continue ;;
             --*) continue ;;
-            [-+]*) [[ "$a" == -*c* ]] && cseen=1; continue ;;
+            [-+]*)
+              [[ "$a" == -*c* ]] && cseen=1
+              [[ "$a" == -*P* ]] && cphys=1
+              [[ "$a" == +*P* ]] && cphys=0
+              continue ;;
           esac
         fi
         (( cseen )) && sidx=$j
@@ -1856,6 +2016,7 @@ _inspect_cmd() {
         local salt="$DIR_ALT" sguard="$ALT_GUARD" sold="$OLD_CUR" stcd="$TILDE_CD" scdc="$CD_COUNT"
         local sdst="$DIRSTK_TAINT" sopt="$OLDPWD_TAINT"
         local -a sat=("${ATTR_N[@]}")
+        local sphys="$PHYS" ssot="$SHOPTS_TAINT"
         local -a sstk=("${DIRSTK[@]}")
         # A new shell does not inherit unexported variables. Rather than
         # track export state, hide every binding while analysing the child,
@@ -1885,13 +2046,15 @@ _inspect_cmd() {
         done
         VAR_K=(); VAR_V=()
         local snc="$NEXT_COND" snp="$NEXT_PIPE"
-        NEXT_PIPE=0; NEXT_COND=0
+        # An inherited physical mode (exported SHELLOPTS) is not undone here.
+        (( cbase )) && cphys=1
+        NEXT_PIPE=0; NEXT_COND=0; PHYS="$cphys"
         _script_text "${args[sidx]}"; _analyze_text "$RET"
         VAR_K=("${svk[@]}"); VAR_V=("${svv[@]}")
         CURDIR="$sdir"; DIR_UNRESOLVED="$sunres"; DIR_DANGER="$sddanger"; DIR_WHY="$swhy"
         DIR_ALT="$salt"; ALT_GUARD="$sguard"; OLD_CUR="$sold"; DIRSTK=("${sstk[@]}")
         TILDE_CD="$stcd"; CD_COUNT="$scdc"; NEXT_COND="$snc"; NEXT_PIPE="$snp"
-        DIRSTK_TAINT="$sdst"; OLDPWD_TAINT="$sopt"; ATTR_N=("${sat[@]}")
+        DIRSTK_TAINT="$sdst"; OLDPWD_TAINT="$sopt"; ATTR_N=("${sat[@]}"); PHYS="$sphys"; SHOPTS_TAINT="$ssot"
         return 0
       fi
       return 0 ;;
@@ -2006,7 +2169,7 @@ _inspect_cmd() {
                 -*) wk=$((wk + 1)); continue ;;
               esac
               _abs_path "$wa" "$gdir"
-              [[ "$RETUNRES" == "0" && "$gunres" == "0" ]] && CREATED+=("${RET%/}")
+              [[ "$RETUNRES" == "0" && "$gunres" == "0" ]] && _record_created "$RET"
               break
             done
           fi ;;
@@ -2061,11 +2224,15 @@ _note_quote() {
 
 _end_cmd() {
   _end_word
-  local had=${#LX_WORDS[@]} pat=0
+  local had=${#LX_WORDS[@]} pat=0 patok=0 cparen="$LX_CPAREN"
+  LX_CPAREN=0
+  # A pattern list ends at `)`, continues after `|` or a newline. A command
+  # ended by ; && || & is never a pattern (fail closed: never skip a command).
+  case "$LX_TERM" in pipe|rparen|seq) patok=1 ;; esac
   if (( had > 0 || ${#LX_REDIRS[@]} + ${#LX_OTHER[@]} + ${#LX_HSTR[@]} > 0 )); then
     # In a case statement, the words after `in` or ;; up to `)` are patterns
     # (`a|cd|fi)`), not commands; an unquoted esac there ends the case.
-    if [[ "$CASE_PAT" == 2 ]] || { [[ "$CASE_PAT" == 1 ]] && ! [[ "${LX_WORDS[0]:-}" == esac && "${LX_WQ[0]:-0}" != 1 ]]; }; then
+    if (( patok )) && { [[ "$CASE_PAT" == 2 ]] || { [[ "$CASE_PAT" == 1 ]] && ! [[ "${LX_WORDS[0]:-}" == esac && "${LX_WQ[0]:-0}" != 1 ]]; }; }; then
       pat=1
     else
       CASE_PAT=0; CASE_OPENED=0
@@ -2076,7 +2243,14 @@ _end_cmd() {
       IC_WQ=("${LX_WQ[@]}")
       _inspect_cmd
       IC_CHILD=0
-      (( CASE_OPENED )) && pat=1   # `case WORD in [first pattern…]`
+      if (( CASE_OPENED )); then
+        # `case WORD in esac` is a whole (empty) case statement.
+        if (( ! cparen )) && [[ "${LX_WORDS[3]:-}" == esac && "${LX_WQ[3]:-0}" != 1 ]]; then
+          if _ctrl_close case && (( CTRL_DEPTH > 0 )); then CTRL_DEPTH=$((CTRL_DEPTH - 1)); fi
+        elif (( patok )); then
+          pat=1                     # `case WORD in [first pattern…]`
+        fi
+      fi
     fi
   fi
   LX_WORDS=(); LX_WQ=(); LX_REDIRS=(); LX_OTHER=(); LX_HSTR=(); LX_PEND=0
@@ -2091,7 +2265,7 @@ _end_cmd() {
   # The commands after `cd <missing> &&` run only if that cd succeeded; the
   # first one ending in ; / || / & closes that and-list.
   if (( had > 0 )); then
-    case "$LX_TERM" in seq|or|bg) ALT_GUARD=0 ;; esac
+    case "$LX_TERM" in seq|semi|or|bg) ALT_GUARD=0 ;; esac
   fi
   # How the NEXT command is entered. An empty command ending at a newline (the
   # line after a trailing `&&`) leaves that state alone.
@@ -2103,11 +2277,27 @@ _end_cmd() {
   LX_TERM=seq
 }
 
+# Is the `)` at C the end of a case pattern? Yes while in a pattern list (not
+# at an unquoted esac outside a leading `(`), or on `case WORD in pattern)`.
+_in_case_pattern() {
+  local nw=${#LX_WORDS[@]} first="${LX_WORDS[0]:-}"
+  [[ -z "$first" ]] && (( LX_HAVE )) && first="$LX_CUR"
+  [[ "$CASE_PAT" == 2 ]] && return 0
+  if [[ "$CASE_PAT" == 1 ]]; then
+    [[ "$first" == esac ]] && return 1
+    return 0
+  fi
+  (( nw >= 3 )) && [[ "${LX_WORDS[0]}" == case && "${LX_WORDS[2]}" == in ]]
+}
+
 # Restore the working directory a subshell context was entered with. A `cd`
 # inside `$( … )` / backticks / `( … )` is scoped to the child shell and must
 # not follow the parent out. Dynamically scoped: reads `term` and the saved
 # values from the _lex_context frame that calls it.
 _leave_context() {
+  # A case still in its pattern list, or a compound opened here and not
+  # closed: this guard lost track of the syntax. Fail closed.
+  if [[ "$CASE_PAT" != 0 ]] || (( ${#CTRL_STK[@]} > ${#LX_SAVED_CS[@]} )); then PARSE_ERROR=1; fi
   [[ -z "$term" ]] && return 0
   CURDIR="$LX_SAVED_DIR"
   DIR_UNRESOLVED="$LX_SAVED_UNRES"
@@ -2120,7 +2310,7 @@ _leave_context() {
   NEXT_COND="$LX_SAVED_NC"; NEXT_PIPE="$LX_SAVED_NP"; LX_TERM=seq
   CTRL_DEPTH="$LX_SAVED_CD"; CTRL_STK=("${LX_SAVED_CS[@]}"); CTRL_SNAP=("${LX_SAVED_CSN[@]}")
   CD_COUNT="$LX_SAVED_CDC"; DIRSTK_TAINT="$LX_SAVED_DST"; OLDPWD_TAINT="$LX_SAVED_OPT"
-  CASE_PAT="$LX_SAVED_CP"; ATTR_N=("${LX_SAVED_AT[@]}")
+  CASE_PAT="$LX_SAVED_CP"; ATTR_N=("${LX_SAVED_AT[@]}"); PHYS="$LX_SAVED_PHYS"; SHOPTS_TAINT="$LX_SAVED_SOT"
 }
 
 _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
@@ -2139,7 +2329,7 @@ _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
   local -a LX_SAVED_STK=("${DIRSTK[@]}") LX_SAVED_CS=("${CTRL_STK[@]}") LX_SAVED_CSN=("${CTRL_SNAP[@]}")
   local -a LX_SAVED_AT=("${ATTR_N[@]}")
   local -a LX_SAVED_VK=("${VAR_K[@]}") LX_SAVED_VV=("${VAR_V[@]}")
-  local LX_SAVED_NC="$NEXT_COND" LX_SAVED_NP="$NEXT_PIPE" LX_SAVED_CD="$CTRL_DEPTH" LX_SAVED_CDC="$CD_COUNT" LX_SAVED_DST="$DIRSTK_TAINT" LX_SAVED_OPT="$OLDPWD_TAINT" LX_SAVED_CP="$CASE_PAT"
+  local LX_SAVED_NC="$NEXT_COND" LX_SAVED_NP="$NEXT_PIPE" LX_SAVED_CD="$CTRL_DEPTH" LX_SAVED_CDC="$CD_COUNT" LX_SAVED_DST="$DIRSTK_TAINT" LX_SAVED_OPT="$OLDPWD_TAINT" LX_SAVED_CP="$CASE_PAT" LX_SAVED_PHYS="$PHYS" LX_SAVED_SOT="$SHOPTS_TAINT"
   local line ch nx rest run
   # `( … )`, `$( … )` and backticks are a new shell: its first command is not
   # the enclosing pipeline member or and-list operand (all of it is restored
@@ -2184,13 +2374,19 @@ _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
         elif [[ "$nx" == '$' ]] && (( BQ == 0 )); then
           _note_quote; LX_CUR="$LX_CUR$LITD"; LX_HAVE=1; C=$((C + 2))   # \$: a literal $
         else
+          # \~ at a word's start is a literal ~, not a tilde expansion.
+          [[ "$nx" == '~' && -z "$LX_CUR" ]] && LX_CUR="$QTILDE"
           _note_quote; LX_CUR="$LX_CUR$nx"; LX_HAVE=1; C=$((C + 2))
         fi ;;
       "'")
         # Every $ in '…' is literal: mark it so it is never expanded.
-        _note_quote; C=$((C + 1)); _read_sq; LX_CUR="$LX_CUR${RET//\$/$LITD}"; LX_HAVE=1 ;;
+        _note_quote; C=$((C + 1)); _read_sq
+        [[ "$RET" == '~'* && -z "$LX_CUR" ]] && LX_CUR="$QTILDE"   # '~/x': a literal ~
+        LX_CUR="$LX_CUR${RET//\$/$LITD}"; LX_HAVE=1 ;;
       '"')
-        _note_quote; C=$((C + 1)); _read_dq; LX_CUR="$LX_CUR$RET"; LX_HAVE=1 ;;
+        _note_quote; C=$((C + 1)); _read_dq
+        [[ "$RET" == '~'* && -z "$LX_CUR" ]] && LX_CUR="$QTILDE"   # "~/x": a literal ~
+        LX_CUR="$LX_CUR$RET"; LX_HAVE=1 ;;
       '`')
         if [[ "$term" == '`' ]]; then C=$((C + 1)); _end_cmd; _leave_context; return; fi
         C=$((C + 1)); BQ=$((BQ + 1)); _lex_context '`'; BQ=$((BQ - 1))
@@ -2217,7 +2413,7 @@ _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
       ' '|$'\t')
         _end_word; C=$((C + 1)) ;;
       ';')
-        _end_cmd; C=$((C + 1))
+        LX_TERM=semi; _end_cmd; C=$((C + 1))
         # ;; ;& ;;& end a case item: what follows is the next pattern list.
         if [[ "${line:C:1}" == ";" ]]; then C=$((C + 1)); CASE_PAT=1; fi
         if [[ "${line:C:1}" == "&" ]]; then C=$((C + 1)); CASE_PAT=1; fi ;;
@@ -2243,7 +2439,7 @@ _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
             C=$((C + 1)); CASE_PAT=2; continue
           fi
           if (( nw >= 3 )) && [[ "${LX_WORDS[0]}" == case && "${LX_WORDS[$((nw - 1))]}" == in ]]; then
-            C=$((C + 1)); continue
+            C=$((C + 1)); LX_CPAREN=1; continue
           fi
         fi
         # NAME() / function NAME(): a function definition, not a subshell.
@@ -2271,7 +2467,9 @@ _lex_context() { # $1 terminator: "" (EOF), ")" or "`"
           C=$((C + 1)); _lex_context ')'
         fi ;;
       ')')
-        if [[ "$term" == ')' ]]; then C=$((C + 1)); _end_cmd; _leave_context; return; fi
+        # Inside $( … ) or ( … ), the `)` that ends a case pattern does not end
+        # the substitution or subshell.
+        if [[ "$term" == ')' ]] && ! _in_case_pattern; then C=$((C + 1)); _end_cmd; _leave_context; return; fi
         LX_TERM=rparen; _end_cmd; C=$((C + 1)) ;;
       '>')
         if [[ "$LX_CUR" =~ ^[0-9]+$ ]]; then LX_CUR=""; LX_HAVE=0; fi

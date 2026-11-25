@@ -1,18 +1,14 @@
 name: License Check
 
-# Report-only licence check over this repo's lockfiles, against the org licence
-# policy (sidekick-labs/.github license-check.yml). It writes its findings to the
-# job summary and never fails the build; it is not a required check.
-# Licence audit 2026-11-10 follow-up. Pinned to the merge commit of
-# sidekick-labs/.github#225 on main.
+# Licence check over this repo's lockfiles, against the org licence policy
+# (sidekick-labs/.github license-check.yml). Pinned to the merge commit of
+# sidekick-labs/.github#231 on main (scope step: skips the scan on PRs that
+# change no lockfile, so it can be a required check without stalling other PRs).
+# Licence audit 2026-11-10 follow-up.
 on:
+  # Every PR, no paths filter, so it can be a required check. The reusable job
+  # skips the scan in seconds when no lockfile changed.
   pull_request:
-    paths:
-      - '**/package-lock.json'
-      - '**/Gemfile.lock'
-      - '**/uv.lock'
-      - '**/requirements*.lock'
-      - '.github/workflows/license-check.yml'
   push:
     branches: [main]
     paths:
@@ -32,7 +28,7 @@ permissions: {}
 
 jobs:
   license-check:
-    uses: sidekick-labs/.github/.github/workflows/license-check.yml@41fec9b325a4b1ecf89889cd2ccf6b1e9f884d38 # main (sidekick-labs/.github#227)
+    uses: sidekick-labs/.github/.github/workflows/license-check.yml@352d20b6dbcd0586781242c5f36da3025904cf67 # main (sidekick-labs/.github#231)
     permissions:
       contents: read
     with:
